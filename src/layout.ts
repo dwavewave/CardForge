@@ -9,9 +9,17 @@ import {
   itemChoices,
   itemFieldEnabled,
   itemCustomNameFields,
+  npcCombatKeys,
   templates,
   visibleFields,
 } from "./model";
+import {
+  attackText,
+  damageLines,
+  legendaryBody,
+  legendaryName,
+  legendaryRules,
+} from "./combat";
 export const CARD_W = 630,
   CARD_H = 880,
   PNG_W = 744,
@@ -138,7 +146,121 @@ function preferredProseSize(characters: number) {
   return 9;
 }
 
-type TextField = Field & { value: string };
+type TextField = Field & {
+  value: string;
+  display?: "section" | "attack" | "indicator" | "detail";
+};
+const combatField = (
+  label: string,
+  value = "",
+  display?: TextField["display"],
+): TextField => ({ key: "", label, value, multiline: true, display });
+
+export function cardTextFields(card: Card, side: Side): TextField[] {
+  const fields: TextField[] = visibleFields(card, side).map((field) => ({
+    ...field,
+    value: fieldValue(card, field.key),
+  }));
+  const legendary = card.legendaryActions?.enabled
+    ? card.legendaryActions
+    : undefined;
+  const legendaryLabel = legendary?.uses?.trim()
+    ? `Legendary actions: ${legendary.uses.trim()}`
+    : "Legendary actions";
+  if (side === "front") {
+    const attacks = (card.attacks ?? []).flatMap((attack) => {
+      const formulas = damageLines(attack.damage);
+      const name = attackText(attack);
+      return name || formulas.length
+        ? [combatField(name, formulas.join("\n"), "attack")]
+        : [];
+    });
+    const structuredDamage = attacks.some((attack) => attack.value);
+    const dice =
+      card.type === "item"
+        ? fields.find((field) => field.key === "damageDice")
+        : undefined;
+    const damageType = dice
+      ? fields.find((field) => field.key === "damageType")
+      : undefined;
+    const primary =
+      (structuredDamage && card.type === "item") || dice
+        ? fields.filter(
+            (field) => field.key !== "damageDice" && field.key !== "damageType",
+          )
+        : fields;
+    if (!structuredDamage && dice)
+      attacks.unshift(
+        combatField(
+          "",
+          [dice.value, damageType?.value].filter(Boolean).join(" "),
+          "attack",
+        ),
+      );
+    if (attacks.length)
+      primary.push(
+        combatField(
+          card.type === "spell" ? "Damage" : "Attacks & damage",
+          "",
+          "section",
+        ),
+        ...attacks,
+      );
+    if (legendary) primary.push(combatField(legendaryLabel, "", "indicator"));
+    return primary;
+  }
+
+  const details: TextField[] = [];
+  if (legendary) {
+    const rules = legendaryRules(legendary);
+    const actions = legendary.actions.flatMap((action) => {
+      const body = legendaryBody(action);
+      return action.name.trim() || action.cost?.trim() || body
+        ? [combatField(legendaryName(action), body)]
+        : [];
+    });
+    if (rules || actions.length) {
+      details.push(combatField(legendaryLabel, "", "section"));
+      if (rules) details.push(combatField("Rules", rules));
+      details.push(...actions);
+      const legacy = fields.find((field) => field.key === "legendary");
+      if (legacy) legacy.label = "Legacy legendary notes";
+    }
+  }
+  const notes = (card.attacks ?? []).flatMap((attack) =>
+    attack.effects?.trim()
+      ? [combatField(attack.name.trim() || "Attack", attack.effects)]
+      : [],
+  );
+  if (notes.length)
+    details.push(combatField("Attack notes", "", "section"), ...notes);
+  const hasNpcSections =
+    card.type === "npc" && fields.some((field) => npcCombatKeys.has(field.key));
+  if (card.type === "monster" && details.length) {
+    const index = fields.findIndex(
+      (field) => field.key === "spellcasting" || field.key === "tactics",
+    );
+    fields.splice(index === -1 ? fields.length : index, 0, ...details);
+  } else if (card.type === "npc" && (details.length || hasNpcSections)) {
+    const primary = fields.filter((field) => npcCombatKeys.has(field.key));
+    const additional = fields.filter((field) => !npcCombatKeys.has(field.key));
+    fields.splice(0, fields.length, ...primary, ...details, ...additional);
+  } else {
+    fields.push(...details);
+  }
+  if (card.backNotes.trim())
+    fields.push({
+      key: "",
+      label:
+        (card.type === "monster" || card.type === "npc") &&
+        (details.length || hasNpcSections)
+          ? "Additional notes"
+          : "DM notes",
+      multiline: true,
+      value: card.backNotes,
+    });
+  return fields;
+}
 
 export function cardLayout(
   card: Card,
@@ -155,28 +277,44 @@ export function cardLayout(
       bodySize: 0,
     };
 
-  const fields: TextField[] = visibleFields(card, side).map((field) => ({
-    ...field,
-    value: fieldValue(card, field.key),
-  }));
-  if (side === "back" && card.backNotes.trim())
-    fields.push({
-      key: "",
-      label: "DM notes",
-      multiline: true,
-      value: card.backNotes,
-    });
-
-  const prose = side === "back" || fields.some((field) => field.multiline);
-  const size = card.textSize ?? "auto";
-  if (size !== "auto") {
-    const preset = presets[size];
-    return contentLayout(
+  const fields = cardTextFields(card, side);
+  const legendaryNames =
+    side === "front" && card.legendaryActions?.enabled
+      ? card.legendaryActions.actions
+          .filter((action) => action.name.trim())
+          .map(legendaryName)
+          .join(" · ")
+      : "";
+  const layoutAt = (body: number, metadata: number) => {
+    const base = contentLayout(
       card,
       safe,
       measure,
       side,
       fields,
+      body,
+      metadata,
+    );
+    if (base.overflow || !legendaryNames) return base;
+    const detailed = contentLayout(
+      card,
+      safe,
+      measure,
+      side,
+      [...fields, combatField("", legendaryNames, "detail")],
+      body,
+      metadata,
+    );
+    return detailed.overflow ? base : detailed;
+  };
+
+  const prose =
+    side === "back" ||
+    fields.some((field) => field.multiline && !field.display);
+  const size = card.textSize ?? "auto";
+  if (size !== "auto") {
+    const preset = presets[size];
+    return layoutAt(
       prose ? units(preset.prose) : preset.metadata,
       preset.metadata,
     );
@@ -194,15 +332,7 @@ export function cardLayout(
     const metadata = prose
       ? Math.max(22, Math.min(28, 22 + (size - 8) * 2))
       : size;
-    layout = contentLayout(
-      card,
-      safe,
-      measure,
-      side,
-      fields,
-      bodySize,
-      metadata,
-    );
+    layout = layoutAt(bodySize, metadata);
     if (!layout.overflow) return layout;
   }
   return layout!;
@@ -330,6 +460,41 @@ function contentLayout(
   for (let index = 0; index < visible.length;) {
     const field = visible[index],
       next = visible[index + 1];
+    if (field.display) {
+      const section =
+        field.display === "section" || field.display === "indicator";
+      const headerSize =
+        field.display === "indicator" ? 22 : section ? 17 : labelSize;
+      if (section && index > 0) y += 3;
+      if (field.label)
+        for (const line of wrap(
+          section ? field.label.toUpperCase() : field.label,
+          width,
+          headerSize,
+          measure,
+          true,
+        )) {
+          text(line, pad, y, headerSize, "#60482e", true);
+          y += headerSize * 1.25;
+        }
+      if (field.value) {
+        const damageSize = field.display === "attack" ? metadataSize + 5 : 21;
+        const bold = field.display === "attack";
+        for (const line of wrap(
+          field.value,
+          width,
+          damageSize,
+          measure,
+          bold,
+        )) {
+          text(line, pad, y, damageSize, "#25232a", bold);
+          y += damageSize * 1.18;
+        }
+      }
+      y += field.display === "attack" ? 6 : 2;
+      index++;
+      continue;
+    }
     const pair =
       !field.multiline && next && !next.multiline && !!field.cue === !!next.cue;
     const row = pair ? [field, next] : [field];
@@ -347,7 +512,9 @@ function contentLayout(
       );
       const valueSize =
         side === "front" && !item.multiline ? metadataSize : bodySize;
-      const lines = wrap(item.value, colWidth - gutter * 2, valueSize, measure);
+      const lines = item.value
+        ? wrap(item.value, colWidth - gutter * 2, valueSize, measure)
+        : [];
       const labelStep = labelSize * 1.22,
         lineHeight = (line: string) => valueSize * (line ? leading : 0.45);
       const height =
@@ -529,11 +696,15 @@ export function continuations(
       fields: { ...fixed },
       backNotes: "",
       artwork: undefined,
+      attacks: undefined,
+      legendaryActions: undefined,
     };
   };
   if (!fits(current))
     throw new Error(
-      "The heading or tags fill the card. Shorten them before creating continuations.",
+      card.attacks?.length || card.legendaryActions?.enabled
+        ? "The heading, tags, or combat sections fill a face. Shorten them before creating continuations."
+        : "The heading or tags fill the card. Shorten them before creating continuations.",
     );
   const chunks = splittable.map((field) => ({
     value: card.fields[field.key] ?? "",

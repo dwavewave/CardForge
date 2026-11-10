@@ -1,0 +1,430 @@
+{
+  "version": 4,
+  "print": {
+    "flip": "long",
+    "x": 0,
+    "y": 0,
+    "guides": false
+  },
+  "printers": [],
+  "cards": [
+    {
+      "id": "v024-ash-hound",
+      "type": "monster",
+      "title": "Ash Hound",
+      "subtitle": "",
+      "fields": {
+        "creature": "Elemental",
+        "ac": "13",
+        "hp": "18",
+        "speed": "40 ft.",
+        "traits": "It can track by scent through smoke."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "bite",
+          "name": "Bite",
+          "damage": [
+            {
+              "id": "bite-main",
+              "formula": "1d6 + 2",
+              "type": "Piercing"
+            }
+          ],
+          "bonus": "+4",
+          "effects": "One target within 5 ft."
+        }
+      ]
+    },
+    {
+      "id": "v024-brass-drake",
+      "type": "monster",
+      "title": "Brass Drake",
+      "subtitle": "",
+      "fields": {
+        "creature": "Construct",
+        "ac": "16",
+        "hp": "54",
+        "speed": "30 ft.",
+        "actions": "Its breath vents in a 15-ft. cone."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "dragon",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "claw",
+          "name": "Heated claw",
+          "damage": [
+            {
+              "id": "claw-main",
+              "formula": "1d8 + 4",
+              "type": "Slashing"
+            },
+            {
+              "id": "claw-fire",
+              "formula": "2d6",
+              "type": "Fire"
+            }
+          ],
+          "bonus": "+7"
+        },
+        {
+          "id": "breath",
+          "name": "Fire breath",
+          "damage": [
+            {
+              "id": "breath-fire",
+              "formula": "6d6",
+              "type": "Fire"
+            }
+          ],
+          "save": {
+            "ability": "DEX",
+            "dc": "15"
+          },
+          "effects": "On a successful save, take half damage."
+        }
+      ]
+    },
+    {
+      "id": "v024-stormvault-wyrm",
+      "type": "monster",
+      "title": "Stormvault Wyrm",
+      "subtitle": "",
+      "fields": {
+        "creature": "Dragon",
+        "ac": "19",
+        "hp": "160",
+        "speed": "40 ft., fly 80 ft."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "dragon",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "bite",
+          "name": "Bite",
+          "damage": [
+            {
+              "id": "bite-main",
+              "formula": "2d10 + 5",
+              "type": "Piercing"
+            }
+          ],
+          "bonus": "+9"
+        }
+      ],
+      "legendaryActions": {
+        "enabled": true,
+        "uses": "3",
+        "recovery": "Start of its turn.",
+        "activation": "After another creature’s turn.",
+        "actions": [
+          {
+            "id": "tail",
+            "name": "Tail Attack",
+            "cost": "1",
+            "description": "Melee attack, +9 to hit.",
+            "damage": [
+              {
+                "id": "tail-main",
+                "formula": "2d8 + 5",
+                "type": "Bludgeoning"
+              }
+            ]
+          },
+          {
+            "id": "wing",
+            "name": "Wing Attack",
+            "cost": "2",
+            "description": "Creatures within 10 ft.",
+            "damage": [
+              {
+                "id": "wing-main",
+                "formula": "2d6 + 5",
+                "type": "Bludgeoning"
+              }
+            ],
+            "save": {
+              "ability": "DEX",
+              "dc": "17"
+            },
+            "effects": "Failed save: damage and Prone."
+          },
+          {
+            "id": "pulse",
+            "name": "Arcane Pulse",
+            "cost": "3",
+            "description": "Creatures within 20 ft.",
+            "damage": [
+              {
+                "id": "pulse-main",
+                "formula": "4d8",
+                "type": "Force"
+              }
+            ],
+            "save": {
+              "ability": "CON",
+              "dc": "16"
+            },
+            "effects": "Damage on a failed save."
+          }
+        ]
+      }
+    },
+    {
+      "id": "v024-harbor-sentinel",
+      "type": "npc",
+      "title": "Harbor Sentinel",
+      "subtitle": "",
+      "fields": {
+        "role": "Watch officer",
+        "pitch": "Low and clipped",
+        "ac": "15",
+        "hp": "22",
+        "speed": "30 ft.",
+        "traits": "Knows the harbor’s hand signals.",
+        "reactions": "After a nearby ally falls, moves up to 10 ft. toward them."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "spear",
+          "name": "Spear",
+          "damage": [
+            {
+              "id": "spear-main",
+              "formula": "1d6 + 2",
+              "type": "Piercing"
+            }
+          ],
+          "bonus": "+4"
+        }
+      ]
+    },
+    {
+      "id": "v024-mapkeeper",
+      "type": "npc",
+      "title": "The Mapkeeper",
+      "subtitle": "",
+      "fields": {
+        "role": "Cartographer",
+        "pitch": "Quiet and precise",
+        "motivation": "Recover a missing chart.",
+        "opening": "Which road forgot you?"
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "wings",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples"
+    },
+    {
+      "id": "v024-divine-smite",
+      "type": "spell",
+      "title": "Divine Smite",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Evocation",
+        "casting": "Bonus Action after hit",
+        "range": "Self",
+        "components": "V",
+        "duration": "Instantaneous",
+        "description": "Cast immediately after a hit with a melee weapon or an Unarmed Strike. A Fiend or Undead takes another 1d8 Radiant."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "smite",
+          "name": "On hit",
+          "damage": [
+            {
+              "id": "smite-base",
+              "formula": "2d8",
+              "type": "Radiant"
+            },
+            {
+              "id": "smite-upcast",
+              "formula": "+1d8 per slot level above 1",
+              "qualifier": "Upcast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v024-detect-magic",
+      "type": "spell",
+      "title": "Detect Magic",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Divination",
+        "casting": "Action or Ritual",
+        "range": "Self",
+        "components": "V, S",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "Yes",
+        "description": "Sense magic within 30 ft. Take a Magic action to see auras on visible creatures or objects in range and identify the school of any spell effect. A foot of stone, dirt, or wood, an inch of metal, or a thin lead sheet blocks it.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples"
+    },
+    {
+      "id": "v024-flame-tongue",
+      "type": "item",
+      "title": "Flame Tongue",
+      "subtitle": "",
+      "fields": {
+        "category": "Weapon",
+        "rarity": "Rare",
+        "attunement": "Required",
+        "magic": "Magical",
+        "activation": "While holding the weapon, speak its command word as a Bonus Action to light it or extinguish it.",
+        "effects": "The flames cast bright light 40 ft. and dim light another 40 ft.",
+        "limitations": "Dropping, stowing, or sheathing the weapon puts out the flames. The +4 is this example wielder’s damage modifier."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "attacks": [
+        {
+          "id": "longsword",
+          "name": "Longsword",
+          "damage": [
+            {
+              "id": "steel",
+              "formula": "1d8 + 4",
+              "type": "Slashing"
+            },
+            {
+              "id": "flame",
+              "formula": "2d6",
+              "type": "Fire",
+              "qualifier": "While ablaze"
+            },
+            {
+              "id": "two-hand",
+              "formula": "1d10 + 4",
+              "type": "Slashing",
+              "qualifier": "Versatile instead"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v024-spark-latch",
+      "type": "custom",
+      "title": "Spark Latch",
+      "subtitle": "",
+      "fields": {},
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "wings",
+      "theme": "parchment",
+      "reverse": "auto",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Combat Studio Samples",
+      "cardTypeLabel": "Trap",
+      "attacks": [
+        {
+          "id": "spark",
+          "name": "Latch discharge",
+          "damage": [
+            {
+              "id": "spark-fire",
+              "formula": "3d6",
+              "type": "Fire"
+            },
+            {
+              "id": "impact",
+              "formula": "2",
+              "type": "Bludgeoning",
+              "qualifier": "Door impact"
+            }
+          ],
+          "save": {
+            "ability": "DEX",
+            "dc": "15"
+          },
+          "effects": "Opening the latch triggers the discharge. A successful save halves Fire damage and avoids the door impact."
+        }
+      ]
+    }
+  ],
+  "queue": [
+    "v024-ash-hound",
+    "v024-brass-drake",
+    "v024-stormvault-wyrm",
+    "v024-harbor-sentinel",
+    "v024-mapkeeper",
+    "v024-divine-smite",
+    "v024-detect-magic",
+    "v024-flame-tongue",
+    "v024-spark-latch"
+  ],
+  "gap": 2,
+  "safe": 3,
+  "crop": true
+}

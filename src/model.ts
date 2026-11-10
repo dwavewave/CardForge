@@ -1,4 +1,12 @@
-export const VERSION = 3;
+import {
+  type Attack,
+  type LegendaryActions,
+  hasCombatBack,
+  validAttacks,
+  validLegendary,
+} from "./combat";
+
+export const VERSION = 4;
 export type Kind = "spell" | "npc" | "plot" | "custom" | "monster" | "item";
 export type Field = {
   key: string;
@@ -63,6 +71,8 @@ export type Card = {
   backNotes: string;
   artwork?: Artwork;
   collection: string;
+  attacks?: Attack[];
+  legendaryActions?: LegendaryActions;
 };
 export type Library = {
   version: typeof VERSION;
@@ -179,6 +189,17 @@ export function fieldValue(card: Card, key: string) {
   return value;
 }
 
+export const npcCombatFields = [
+  f("ac", "AC"),
+  f("hp", "HP"),
+  f("speed", "Speed"),
+  f("traits", "Traits", true),
+  f("actions", "Actions", true),
+  f("bonusActions", "Bonus actions", true),
+  f("reactions", "Reactions", true),
+];
+export const npcCombatKeys = new Set(npcCombatFields.map((field) => field.key));
+
 export const templates: Record<
   Kind,
   {
@@ -226,6 +247,7 @@ export const templates: Record<
       f("conceals", "Conceals", true),
       f("opening", "Opening line", true),
       f("last", "Last interaction", true),
+      ...npcCombatFields,
     ],
   },
   plot: {
@@ -318,7 +340,8 @@ export const decorative = (card: Card) =>
   (card.reverse === "auto" &&
     !card.backNotes.trim() &&
     card.artwork?.side !== "back" &&
-    !visibleFields(card, "back").length);
+    !visibleFields(card, "back").length &&
+    !hasCombatBack(card.attacks, card.legendaryActions));
 export const uid = () => crypto.randomUUID();
 export function newCard(type: Kind): Card {
   return {
@@ -430,13 +453,16 @@ export function parseLibrary(raw: string): Library {
   const data: unknown = JSON.parse(raw);
   if (
     !record(data) ||
-    (data.version !== 1 && data.version !== 2 && data.version !== VERSION) ||
+    (data.version !== 1 &&
+      data.version !== 2 &&
+      data.version !== 3 &&
+      data.version !== VERSION) ||
     !Array.isArray(data.cards) ||
     data.cards.length > MAX_CARDS ||
     !Array.isArray(data.queue)
   )
     throw new Error(
-      "Expected a CardForge version 1, 2, or 3 library (up to 500 cards).",
+      "Expected a CardForge version 1, 2, 3, or 4 library (up to 500 cards).",
     );
   const legacy = data.version === 1;
   const cards: Card[] = [];
@@ -450,7 +476,7 @@ export function parseLibrary(raw: string): Library {
       typeof c.type !== "string" ||
       !Object.hasOwn(templates, c.type) ||
       (legacy && c.type === "monster") ||
-      (data.version !== VERSION && c.type === "item") ||
+      ((data.version === 1 || data.version === 2) && c.type === "item") ||
       !str(c.title, 120) ||
       (c.type === "item" && !c.title.trim()) ||
       (c.type === "custom" &&
@@ -512,6 +538,16 @@ export function parseLibrary(raw: string): Library {
         throw new Error("Invalid tag data.");
       tags.add(t.id);
     }
+    const attacks = c.attacks;
+    const legendaryActions = c.legendaryActions;
+    if (attacks !== undefined && (c.type === "plot" || !validAttacks(attacks)))
+      throw new Error("Invalid attacks in backup.");
+    if (
+      legendaryActions !== undefined &&
+      ((c.type !== "monster" && c.type !== "npc") ||
+        !validLegendary(legendaryActions))
+    )
+      throw new Error("Invalid legendary actions in backup.");
     const base = {
       id: c.id,
       type: c.type as Kind,
@@ -528,6 +564,8 @@ export function parseLibrary(raw: string): Library {
           : { id, label, color, symbol },
       ),
       demo: c.demo,
+      ...(attacks === undefined ? {} : { attacks }),
+      ...(legendaryActions === undefined ? {} : { legendaryActions }),
     };
     if (legacy) {
       cards.push({
@@ -538,7 +576,11 @@ export function parseLibrary(raw: string): Library {
         backNotes: "",
         collection: "",
         placement: Object.fromEntries(
-          fieldsFor(base as Card).map((field) => [field.key, "front"]),
+          fieldsFor(base as Card)
+            .filter(
+              (field) => base.type !== "npc" || !npcCombatKeys.has(field.key),
+            )
+            .map((field) => [field.key, "front"]),
         ),
       });
     } else {

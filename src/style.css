@@ -1463,3 +1463,27 @@ main {
 .import-modal button {
   min-height: 44px;
 }
+
+.combat-entry {
+  min-inline-size: 0;
+  border: 1px solid #e7e0d4;
+  border-radius: 6px;
+  margin: 10px 0;
+  padding: 8px;
+}
+.combat-entry legend {
+  padding-inline: 5px;
+  font-weight: 700;
+}
+.combat-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.combat-damage {
+  margin: 8px 0;
+}
+.combat-editor input:not([type="checkbox"]) {
+  min-height: 44px;
+}

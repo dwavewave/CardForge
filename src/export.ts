@@ -118,7 +118,7 @@ async function writePDF(
       ? "CardForge duplex calibration"
       : "CardForge · Print at actual size",
   );
-  pdf.setCreator("CardForge v0.2.3");
+  pdf.setCreator("CardForge v0.2.4");
   const preferences = pdf.catalog.getOrCreateViewerPreferences();
   preferences.setPrintScaling(PrintScaling.None);
   preferences.setDuplex(

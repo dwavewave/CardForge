@@ -8,6 +8,7 @@ import {
   type Card,
   type Side,
 } from "./model";
+import { hasCombatBack } from "./combat";
 import { frameURL } from "./art";
 
 export function CardAppearance({
@@ -26,7 +27,8 @@ export function CardAppearance({
     card.reverse === "decorative" &&
     (card.backNotes.trim() ||
       art?.side === "back" ||
-      visibleFields(card, "back").length > 0);
+      visibleFields(card, "back").length > 0 ||
+      hasCombatBack(card.attacks, card.legendaryActions));
   return (
     <section className="appearance" aria-label="Card appearance">
       <div className="section-label">FRAME STYLE</div>

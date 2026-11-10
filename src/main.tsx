@@ -6,6 +6,7 @@ import "@fontsource/lora/700.css";
 import "@fontsource/cinzel/700.css";
 import { CardAppearance } from "./CardAppearance";
 import { ItemDetails } from "./ItemDetails";
+import { CombatDetails } from "./CombatDetails";
 import { PrintSettings } from "./PrintSettings";
 import { importArtwork, frameURL, loadImage } from "./art";
 import { printPages, printSlots } from "./print";
@@ -16,10 +17,9 @@ import {
   type Side,
   VERSION,
   MAX_CARD_TYPE_LABEL,
-  fieldValue,
+  npcCombatKeys,
   defaultPrint,
   fieldSide,
-  visibleFields,
   decorative,
   tagSymbols,
   MAX_BACKUP,
@@ -38,6 +38,7 @@ import {
 import {
   canvasMeasure,
   cardLayout,
+  cardTextFields,
   continuations,
   sheetGeometry,
 } from "./layout";
@@ -136,9 +137,11 @@ function Preview({
           <>
             {side === "front"
               ? `${card.subtitle}. Tags: ${card.tags.map((t) => t.label).join(", ")}.`
-              : card.backNotes}{" "}
-            {visibleFields(card, side)
-              .map((f) => `${f.label}: ${fieldValue(card, f.key)}`)
+              : ""}{" "}
+            {cardTextFields(card, side)
+              .map((field) =>
+                [field.label, field.value].filter(Boolean).join(": "),
+              )
               .join(". ")}
           </>
         )}
@@ -496,7 +499,7 @@ function App() {
           <span>
             CardForge<small>THE TABLETOP PRINT STUDIO</small>
           </span>
-          <span className="version">v0.2.3</span>
+          <span className="version">v0.2.4</span>
         </a>
         <nav aria-label="Main navigation">
           <button
@@ -706,7 +709,9 @@ function App() {
                           onClick={() => {
                             if (card.type === key) return;
                             if (
-                              Object.values(card.fields).some(Boolean) &&
+                              (Object.values(card.fields).some(Boolean) ||
+                                card.attacks?.length ||
+                                card.legendaryActions) &&
                               !window.confirm(
                                 "Changing template clears template fields. Continue?",
                               )
@@ -715,6 +720,10 @@ function App() {
                             update({
                               type: key as Kind,
                               cardTypeLabel: undefined,
+                              ...(key === "plot" ? { attacks: undefined } : {}),
+                              ...(key === "npc" || key === "monster"
+                                ? {}
+                                : { legendaryActions: undefined }),
                               ...(key === "item" &&
                               !saved &&
                               card.frame === "dragon"
@@ -924,7 +933,8 @@ function App() {
                     ).map((group) => {
                       const fieldList = fieldsFor(card).filter(
                         (f) =>
-                          !group || f.multiline === (group !== "Statistics"),
+                          (card.type !== "npc" || !npcCombatKeys.has(f.key)) &&
+                          (!group || f.multiline === (group !== "Statistics")),
                       );
                       const controls = (
                         <div className="fields">
@@ -1079,6 +1089,13 @@ function App() {
                         <React.Fragment key="fields">{controls}</React.Fragment>
                       );
                     })}
+                    {card.type !== "plot" && (
+                      <CombatDetails
+                        key={`${card.id}:${card.type}`}
+                        card={card}
+                        update={update}
+                      />
+                    )}
                     <label className="back-notes">
                       DM notes (back)
                       <textarea

@@ -29,6 +29,7 @@ import {
 import {
   canvasMeasure,
   cardLayout,
+  cardTextFields,
   safeBounds,
   CARD_W,
   continuations,
@@ -40,6 +41,7 @@ import {
   wrap,
   textColor,
 } from "./layout";
+import { formulaKind, damageLines } from "./combat";
 import { createCalibrationPDF, createPDF, renderCard, mm } from "./export";
 vi.mock("./art", async () => {
   const { loadImage } = await import("@napi-rs/canvas");
@@ -491,6 +493,198 @@ describe("Custom labels and Item cards", () => {
     item.title = "  ";
     expect(() => parseLibrary(serialize(library))).toThrow(/Invalid card/);
     await expect(renderCard(item, 3)).rejects.toThrow(/item name/);
+  });
+});
+
+describe("structured combat", () => {
+  const samples = () =>
+    parseLibrary(
+      readFileSync(
+        new URL("../output/libraries/combat-v0.2.4.json", import.meta.url),
+        "utf8",
+      ),
+    );
+
+  it("recognizes dice and flat damage without rejecting free text or changing formulas", () => {
+    for (const formula of ["1d6", "2d8 + 3", "4d10", "1d12 + 1d6", "2d6 + 5"])
+      expect(formulaKind(formula)).toBe("Dice formula");
+    expect(formulaKind("5")).toBe("Flat damage");
+    expect(formulaKind("half the damage rolled")).toBe("Free-text formula");
+    const library = samples();
+    const damage = library.cards[0].attacks![0].damage[0];
+    damage.formula = "  1D6  +  2  ";
+    expect(
+      parseLibrary(serialize(library)).cards[0].attacks![0].damage[0].formula,
+    ).toBe(damage.formula);
+    expect(
+      damageLines([
+        { id: "a", formula: "1d8 + 4", type: "Slashing" },
+        { id: "b", formula: "2d6", type: "Fire" },
+        { id: "c", formula: "+1d8 per higher slot", qualifier: "Upcast" },
+      ]),
+    ).toEqual(["1d8 + 4 Slashing + 2d6 Fire", "Upcast · +1d8 per higher slot"]);
+  });
+
+  it("round-trips all nine combat examples and fits both sides", () => {
+    const library = samples();
+    expect(library.cards).toHaveLength(9);
+    expect(parseLibrary(serialize(library))).toEqual(library);
+    const m = measure();
+    for (const card of library.cards)
+      for (const side of ["front", "back"] as const) {
+        expect(
+          cardLayout(card, library.safe, m, side).overflow,
+          `${card.title} ${side}`,
+        ).toBe(false);
+      }
+  });
+
+  it("emphasizes formulas, shows both attack and save details, and omits empty blocks", () => {
+    const library = samples();
+    const drake = library.cards.find((card) => card.title === "Brass Drake")!;
+    const m = measure();
+    const ops = cardLayout(drake, library.safe, m).ops.filter(
+      (op) => op.kind === "text",
+    );
+    expect(ops.map((op) => op.text).join(" ")).toContain(
+      "1d8 + 4 Slashing + 2d6 Fire",
+    );
+    expect(ops.map((op) => op.text).join(" ")).toContain("+7 to hit");
+    expect(ops.map((op) => op.text).join(" ")).toContain("DEX DC 15 save");
+    const formula = ops.find((op) => op.text === "6d6 Fire")!;
+    expect(formula.size).toBeGreaterThan(
+      ops.find((op) => op.text === "16")!.size,
+    );
+    expect(formula.size).toBeLessThan(
+      ops.find((op) => op.text === drake.title)!.size,
+    );
+    for (const title of ["Detect Magic", "The Mapkeeper"]) {
+      const card = library.cards.find((card) => card.title === title)!;
+      const blank = {
+        ...card,
+        attacks: [{ id: "blank", name: "", damage: [] }],
+      };
+      expect(cardLayout(blank, library.safe, m)).toEqual(
+        cardLayout(card, library.safe, m),
+      );
+    }
+  });
+
+  it("orders legendary rules and actions on the back, with an indicator on the front", () => {
+    const card = samples().cards.find(
+      (card) => card.title === "Stormvault Wyrm",
+    )!;
+    card.fields = {
+      ...card.fields,
+      traits: "Watchful",
+      actions: "Bite",
+      bonusActions: "Run",
+      reactions: "Duck",
+      legendary: "Retained prose",
+      tactics: "Look up",
+    };
+    card.backNotes = "Final note";
+    const front = cardTextFields(card, "front");
+    const back = cardTextFields(card, "back");
+    expect(front.map((field) => field.label)).toContain("Legendary actions: 3");
+    expect(front.map((field) => field.value).join(" ")).not.toContain(
+      "Melee attack",
+    );
+    expect(back.map((field) => field.label)).toEqual([
+      "Traits",
+      "Actions",
+      "Bonus actions",
+      "Reactions",
+      "Legacy legendary notes",
+      "Legendary actions: 3",
+      "Rules",
+      "Tail Attack · Cost 1",
+      "Wing Attack · Cost 2",
+      "Arcane Pulse · Cost 3",
+      "Tactics",
+      "Additional notes",
+    ]);
+    expect(back.find((field) => field.label === "Rules")?.value).toContain(
+      "Recovery · Start of its turn.",
+    );
+    expect(
+      back.find((field) => field.label === "Wing Attack · Cost 2")?.value,
+    ).toContain("DEX DC 17 save");
+    card.legendaryActions!.enabled = false;
+    expect(
+      cardTextFields(card, "front").map((field) => field.label),
+    ).not.toContain("Legendary actions: 3");
+    expect(cardTextFields(card, "back").map((field) => field.value)).toContain(
+      "Retained prose",
+    );
+    expect(card.legendaryActions!.actions).toHaveLength(3);
+  });
+
+  it("keeps v3 item and monster data and promotes existing weapon dice without rewriting fields", () => {
+    const raw = JSON.parse(
+      readFileSync(
+        new URL(
+          "../output/libraries/items-and-custom-v0.2.3.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    const monster = {
+      ...newCard("monster"),
+      title: "Legacy creature",
+      fields: { legendary: "After a turn, make a tail attack." },
+    };
+    raw.cards.push(monster);
+    const library = parseLibrary(JSON.stringify(raw));
+    expect(library).toEqual({ ...raw, version: VERSION });
+    const longsword = library.cards[0];
+    expect(
+      cardTextFields(longsword, "front").some(
+        (field) => field.value === "1d8 Slashing",
+      ),
+    ).toBe(true);
+    expect(longsword.attacks).toBeUndefined();
+    expect(library.cards.at(-1)?.fields.legendary).toBe(
+      monster.fields.legendary,
+    );
+  });
+
+  it("accepts many ordered actions and refuses overflow without truncating them", async () => {
+    const library = samples();
+    const card = library.cards.find(
+      (card) => card.title === "Stormvault Wyrm",
+    )!;
+    card.legendaryActions!.actions = Array.from({ length: 42 }, (_, index) => ({
+      id: `action-${index}`,
+      name: `Action ${index}`,
+      cost: String(index + 1),
+      description: "Its full description remains available.",
+      damage: [],
+    }));
+    const parsed = parseLibrary(serialize(library));
+    expect(
+      parsed.cards.find((entry) => entry.id === card.id)?.legendaryActions,
+    ).toEqual(card.legendaryActions);
+    expect(cardLayout(card, library.safe, measure(), "front").overflow).toBe(
+      false,
+    );
+    await expect(renderCard(card, library.safe, false, "back")).rejects.toThrow(
+      /overflows/,
+    );
+    expect(() =>
+      continuations(card, library.safe, measure(), () => crypto.randomUUID()),
+    ).toThrow(/combat sections/);
+  });
+
+  it("rejects duplicate nested IDs and invalid save abilities", () => {
+    const library = samples();
+    const attack = library.cards[0].attacks![0];
+    attack.damage.push(attack.damage[0]);
+    expect(() => parseLibrary(serialize(library))).toThrow(/Invalid attacks/);
+    attack.damage.pop();
+    Object.assign(attack, { save: { ability: "LUK", dc: "10" } });
+    expect(() => parseLibrary(serialize(library))).toThrow(/Invalid attacks/);
   });
 });
 
