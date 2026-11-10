@@ -20,6 +20,15 @@ import {
   legendaryName,
   legendaryRules,
 } from "./combat";
+import {
+  abilities,
+  abilityDisplay,
+  challengeDisplay,
+  creatureFrontKeys,
+  movementStats,
+  movementDisplay,
+  primaryStats,
+} from "./creature";
 export const CARD_W = 630,
   CARD_H = 880,
   PNG_W = 744,
@@ -197,17 +206,20 @@ export function cardTextFields(card: Card, side: Side): TextField[] {
           "attack",
         ),
       );
-    if (attacks.length)
-      primary.push(
-        combatField(
-          card.type === "spell" ? "Damage" : "Attacks & damage",
-          "",
-          "section",
-        ),
-        ...attacks,
-      );
-    if (legendary) primary.push(combatField(legendaryLabel, "", "indicator"));
-    return primary;
+    const summary = attacks.length
+      ? [
+          combatField(
+            card.type === "spell" ? "Damage" : "Attacks & damage",
+            "",
+            "section",
+          ),
+          ...attacks,
+        ]
+      : [];
+    if (legendary) summary.push(combatField(legendaryLabel, "", "indicator"));
+    return card.miniStatBlock?.enabled
+      ? [...summary, ...primary]
+      : [...primary, ...summary];
   }
 
   const details: TextField[] = [];
@@ -260,6 +272,56 @@ export function cardTextFields(card: Card, side: Side): TextField[] {
       value: card.backNotes,
     });
   return fields;
+}
+
+type StatCell = { label: string; value: string; modifier?: string };
+
+export function creatureFront(card: Card) {
+  if (!card.miniStatBlock?.enabled) return undefined;
+  const read = (key: string) =>
+    card.placement[key] === "back" ? "" : fieldValue(card, key).trim();
+  const { cr, xp } = challengeDisplay(read("challenge"));
+  const classification = [
+    read("size"),
+    read("creature"),
+    read("alignment"),
+    cr && `CR ${cr}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const { speed, movement } = movementDisplay(read("speed"));
+  const primary: StatCell[] = primaryStats.map(([key, label]) => ({
+    label: label.toUpperCase(),
+    value: key === "speed" ? speed : read(key),
+  }));
+  const scores: StatCell[] = abilities.map(([key]) => {
+    const override =
+      card.placement[key] === "back"
+        ? undefined
+        : card.miniStatBlock?.modifiers?.[key];
+    const { score, modifier } = abilityDisplay(read(key), override);
+    return { label: key.toUpperCase(), value: score, modifier };
+  });
+  const details = [
+    read("hitDice") && `Hit Dice ${read("hitDice")}`,
+    (read("xp") || xp) && `XP ${(read("xp") || xp).replace(/\s+XP$/i, "")}`,
+    read("proficiency") && `PB ${read("proficiency")}`,
+    ...movementStats.map(([key, label]) => {
+      const value =
+        card.placement[key] === "back" && fieldValue(card, key).trim()
+          ? ""
+          : read(key) || movement[key];
+      return value ? `${label} ${value}` : "";
+    }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    classification,
+    details,
+    primary: primary.some((cell) => cell.value) ? primary : [],
+    scores: scores.some((cell) => cell.value || cell.modifier) ? scores : [],
+  };
 }
 
 export function cardLayout(
@@ -398,6 +460,8 @@ function contentLayout(
     }
     y += 6;
   }
+  const statBlock = side === "front" ? creatureFront(card) : undefined;
+  const combat = !!statBlock && card.miniStatBlock?.layout === "combat";
   const titleSize = side === "front" ? 38 * scale : Math.min(45, bodySize + 4);
   for (const line of wrap(
     card.title || "Untitled card",
@@ -409,6 +473,17 @@ function contentLayout(
   )) {
     text(line, pad, y, titleSize, "#241e24", true, true);
     y += titleSize * 1.2;
+  }
+  if (statBlock?.classification) {
+    for (const line of wrap(
+      statBlock.classification,
+      width,
+      metadataSize,
+      measure,
+    )) {
+      text(line, pad, y, metadataSize, "#514538");
+      y += metadataSize * 1.18;
+    }
   }
   if (side === "front" && card.subtitle) {
     y += 3;
@@ -450,12 +525,65 @@ function contentLayout(
   rect(pad, y, width, 1, "#8a7155");
   y += side === "front" ? 11 : 8;
   if (card.artwork?.side === side) {
-    const h = Math.round((card.frame === "plain" ? 196 : 148) * scale);
+    const h = Math.round(
+      (card.frame === "plain" ? 196 : 148) * scale * (combat ? 0.6 : 1),
+    );
     ops.push({ kind: "artwork", art: card.artwork, x: pad, y, w: width, h });
     y += h + 12;
   }
 
   const labelSize = Math.max(15, 17 * scale);
+  if (statBlock) {
+    const drawRow = (cells: StatCell[]) => {
+      if (!cells.length) return;
+      const gap = 6;
+      const columnWidth = (width - gap * (cells.length - 1)) / cells.length;
+      let end = y;
+      cells.forEach((cell, index) => {
+        const left = pad + index * (columnWidth + gap);
+        const centered = (
+          line: string,
+          lineY: number,
+          size: number,
+          bold = false,
+        ) =>
+          text(
+            line,
+            left + (columnWidth - measure(line, size, bold)) / 2,
+            lineY,
+            size,
+            bold ? "#60482e" : "#25232a",
+            bold,
+          );
+        centered(cell.label, y, labelSize, true);
+        let lineY = y + labelSize * 1.22;
+        for (const value of [cell.value || "—", cell.modifier].filter(
+          Boolean,
+        )) {
+          for (const line of wrap(value!, columnWidth, metadataSize, measure)) {
+            centered(line, lineY, metadataSize);
+            lineY += metadataSize * 1.16;
+          }
+        }
+        end = Math.max(end, lineY);
+      });
+      y = end + 9;
+    };
+    drawRow(statBlock.primary);
+    drawRow(statBlock.scores);
+    if (statBlock.details) {
+      for (const line of wrap(
+        statBlock.details,
+        width,
+        metadataSize,
+        measure,
+      )) {
+        text(line, pad, y, metadataSize, "#514538");
+        y += metadataSize * 1.18;
+      }
+      y += 6;
+    }
+  }
   const leading = side === "back" && bodySize < units(9) ? 1.12 : 1.18;
   for (let index = 0; index < visible.length;) {
     const field = visible[index],
@@ -478,7 +606,8 @@ function contentLayout(
           y += headerSize * 1.25;
         }
       if (field.value) {
-        const damageSize = field.display === "attack" ? metadataSize + 5 : 21;
+        const damageSize =
+          field.display === "attack" ? metadataSize + (combat ? 7 : 5) : 21;
         const bold = field.display === "attack";
         for (const line of wrap(
           field.value,
@@ -496,7 +625,19 @@ function contentLayout(
       continue;
     }
     const pair =
-      !field.multiline && next && !next.multiline && !!field.cue === !!next.cue;
+      !field.multiline &&
+      next &&
+      !next.multiline &&
+      !!field.cue === !!next.cue &&
+      !(
+        side === "back" &&
+        card.miniStatBlock?.enabled &&
+        [field, next].some((item) =>
+          item.value
+            .split(/\s+/)
+            .some((word) => measure(word, bodySize) > (width - 14) / 2 - 12),
+        )
+      );
     const row = pair ? [field, next] : [field];
     const colWidth = pair ? (width - 14) / 2 : width;
     let rowHeight = 0;
@@ -677,8 +818,14 @@ export function continuations(
       : {};
   const splittable = fieldsFor(card).filter(
     (field) =>
-      card.type !== "item" ||
-      (!Object.hasOwn(fixed, field.key) && itemFieldEnabled(card, field.key)),
+      !(
+        card.miniStatBlock?.enabled !== undefined &&
+        creatureFrontKeys.has(field.key) &&
+        card.placement[field.key] !== "back"
+      ) &&
+      (card.type !== "item" ||
+        (!Object.hasOwn(fixed, field.key) &&
+          itemFieldEnabled(card, field.key))),
   );
   const keys = new Set(splittable.map((field) => field.key));
   const unrendered = Object.fromEntries(
@@ -698,12 +845,15 @@ export function continuations(
       artwork: undefined,
       attacks: undefined,
       legendaryActions: undefined,
+      miniStatBlock: undefined,
     };
   };
   if (!fits(current))
     throw new Error(
-      card.attacks?.length || card.legendaryActions?.enabled
-        ? "The heading, tags, or combat sections fill a face. Shorten them before creating continuations."
+      card.attacks?.length ||
+        card.legendaryActions?.enabled ||
+        card.miniStatBlock?.enabled
+        ? "The heading, tags, stats, or combat sections fill a face. Shorten them before creating continuations."
         : "The heading or tags fill the card. Shorten them before creating continuations.",
     );
   const chunks = splittable.map((field) => ({

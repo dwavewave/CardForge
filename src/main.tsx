@@ -6,6 +6,7 @@ import "@fontsource/lora/700.css";
 import "@fontsource/cinzel/700.css";
 import { CardAppearance } from "./CardAppearance";
 import { ItemDetails } from "./ItemDetails";
+import { CreatureDetails } from "./CreatureDetails";
 import { CombatDetails } from "./CombatDetails";
 import { PrintSettings } from "./PrintSettings";
 import { importArtwork, frameURL, loadImage } from "./art";
@@ -18,6 +19,7 @@ import {
   VERSION,
   MAX_CARD_TYPE_LABEL,
   npcCombatKeys,
+  creatureStatKeys,
   defaultPrint,
   fieldSide,
   decorative,
@@ -39,6 +41,7 @@ import {
   canvasMeasure,
   cardLayout,
   cardTextFields,
+  creatureFront,
   continuations,
   sheetGeometry,
 } from "./layout";
@@ -119,6 +122,7 @@ function Preview({
       active = false;
     };
   }, [card, safe, side, onOverflow]);
+  const stats = side === "front" ? creatureFront(card) : undefined;
   return (
     <>
       {src ? (
@@ -138,6 +142,18 @@ function Preview({
             {side === "front"
               ? `${card.subtitle}. Tags: ${card.tags.map((t) => t.label).join(", ")}.`
               : ""}{" "}
+            {stats &&
+              [
+                stats.classification,
+                ...[...stats.primary, ...stats.scores].map((cell) =>
+                  [cell.label, cell.value, cell.modifier]
+                    .filter(Boolean)
+                    .join(" "),
+                ),
+                stats.details,
+              ]
+                .filter(Boolean)
+                .join(". ")}{" "}
             {cardTextFields(card, side)
               .map((field) =>
                 [field.label, field.value].filter(Boolean).join(": "),
@@ -499,7 +515,7 @@ function App() {
           <span>
             CardForge<small>THE TABLETOP PRINT STUDIO</small>
           </span>
-          <span className="version">v0.2.4</span>
+          <span className="version">v0.2.5</span>
         </a>
         <nav aria-label="Main navigation">
           <button
@@ -720,6 +736,10 @@ function App() {
                             update({
                               type: key as Kind,
                               cardTypeLabel: undefined,
+                              miniStatBlock:
+                                key === "monster"
+                                  ? { enabled: true, layout: "standard" }
+                                  : undefined,
                               ...(key === "plot" ? { attacks: undefined } : {}),
                               ...(key === "npc" || key === "monster"
                                 ? {}
@@ -785,6 +805,13 @@ function App() {
                     </label>
                     {card.type === "item" && (
                       <ItemDetails card={card} update={update} />
+                    )}
+                    {(card.type === "monster" || card.type === "npc") && (
+                      <CreatureDetails
+                        key={card.id}
+                        card={card}
+                        update={update}
+                      />
                     )}
                     <CardAppearance
                       card={card}
@@ -928,13 +955,14 @@ function App() {
                     {(card.type === "item"
                       ? []
                       : card.type === "monster"
-                        ? ["Statistics", "Actions, traits and tactics"]
+                        ? ["Actions, traits and tactics"]
                         : [""]
                     ).map((group) => {
                       const fieldList = fieldsFor(card).filter(
                         (f) =>
                           (card.type !== "npc" || !npcCombatKeys.has(f.key)) &&
-                          (!group || f.multiline === (group !== "Statistics")),
+                          (card.type !== "monster" ||
+                            !creatureStatKeys.has(f.key)),
                       );
                       const controls = (
                         <div className="fields">
@@ -1077,11 +1105,7 @@ function App() {
                         </div>
                       );
                       return group ? (
-                        <details
-                          className="editor-disclosure"
-                          key={group}
-                          open={group === "Statistics"}
-                        >
+                        <details className="editor-disclosure" key={group}>
                           <summary>{group}</summary>
                           {controls}
                         </details>

@@ -338,7 +338,7 @@ export function CombatDetails({
       </summary>
       {card.type === "npc" && (
         <details className="editor-disclosure">
-          <summary>NPC combat statistics and actions</summary>
+          <summary>NPC traits and actions</summary>
           <div className="fields">
             {npcCombatFields.map((field) => (
               <div

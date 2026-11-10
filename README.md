@@ -1,4 +1,4 @@
-# CardForge v0.2.4
+# CardForge v0.2.5
 
 CardForge is a local tabletop card studio for creating, organizing, and printing 63 × 88 mm reference cards. It runs in a browser without an account or backend.
 
@@ -24,7 +24,8 @@ Vite prints the local URL. Use the same browser profile and origin to see your s
 4. Select **Save card** to keep it. **Duplicate** opens a copy for editing. Search by title, subtitle, collection or tag. Use **Frame grid** for thumbnail browsing.
 5. On Custom cards, set **Card Type Label** to print an uppercase category or leave it blank. Item cards need a name and start with Arcane and Parchment. Open **Equipment details** or **Back details** to fill the optional fields.
 6. Open **Combat details** to add attacks, or **Damage** on a spell. Keep different damage types in separate components. Monster and NPC cards can also show a legendary-action budget on the front and the full actions on the back.
-7. Leave **Text Size** on **Auto** for a measured fit, or choose **Small**, **Medium**, or **Large** for a fixed size. If a side overflows, try Auto or a smaller size, move fields, or shorten text. **Create & save continuation cards** splits longer text while retaining both sides. Export either selected side as a 744 × 1039 PNG.
+7. In **Creature statistics**, use **Show Mini Stat Block** to group a Monster or NPC’s combat stats on the front. New Monsters start with it enabled. Choose **Standard** for a larger artwork window or **Combat** for more room and larger damage formulas. In **Ability scores and modifiers**, leave an override blank to use the entered modifier or calculate it from the score.
+8. Leave **Text Size** on **Auto** for a measured fit, or choose **Small**, **Medium**, or **Large** for a fixed size. If a side overflows, try Auto or a smaller size, move fields, or shorten text. **Create & save continuation cards** splits longer text while retaining both sides. Export either selected side as a 744 × 1039 PNG.
 
 ## Print and calibrate
 
@@ -38,6 +39,8 @@ Vite prints the local URL. Use the same browser profile and origin to see your s
 - On iPhone, open the HTTPS app in Safari and use **Share → Add to Home Screen**. On a supported desktop browser, use its install command. Open the app online once so the service worker can finish caching. When updating, close other CardForge tabs and standalone windows before reopening.
 - On iPhone, try **Open PDF** and the system Share sheet to print or save to Files. **Share PDF** appears when the browser reports support for file sharing. Actual iPhone installation and export are pending device verification.
 - **Export library** saves cards, image crops, queue order, and printer settings to JSON. **Import JSON** validates the file and offers **Merge** or **Replace library**. Merge adds new card IDs and skips existing IDs while keeping your saved cards, draft, print queue, and settings. Replace loads the backup as the active library. v0.1 backups and browser data migrate in place. Existing fields stay on the front, with the Classic frame and single-sided printing. Keep regular backups because browser storage is tied to the origin and can be cleared or evicted.
+
+Try the [creature sample library](output/libraries/creature-stat-blocks-v0.2.5.json), view the [A4 duplex proof](output/pdf/creature-stat-blocks-v0.2.5.pdf), or read the [v0.2.5 implementation notes](docs/V025_IMPLEMENTATION.md).
 
 Try the [combat sample library](output/libraries/combat-v0.2.4.json) or read the [v0.2.4 implementation notes](docs/V024_IMPLEMENTATION.md). The [Item and Custom samples](output/libraries/items-and-custom-v0.2.3.json) are also available. See the [v0.2.3 implementation notes](docs/V023_IMPLEMENTATION.md). See the [v0.2.2 release notes](docs/V022_IMPLEMENTATION.md) and the [Paladin example library](output/libraries/paladin-level-1-2024.json). Earlier releases have [implementation notes](docs/V02_IMPLEMENTATION.md), [acceptance evidence](docs/V02_ACCEPTANCE.md), and the [v0.1 reference audit](docs/REFERENCE_AUDIT.md).
 

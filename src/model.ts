@@ -6,7 +6,18 @@ import {
   validLegendary,
 } from "./combat";
 
-export const VERSION = 4;
+import {
+  abilities,
+  primaryStats,
+  movementStats,
+  creatureDefences,
+  creatureBackKeys,
+  creatureFrontKeys,
+  validMiniStatBlock,
+  type MiniStatBlock,
+} from "./creature";
+
+export const VERSION = 5;
 export type Kind = "spell" | "npc" | "plot" | "custom" | "monster" | "item";
 export type Field = {
   key: string;
@@ -73,6 +84,7 @@ export type Card = {
   collection: string;
   attacks?: Attack[];
   legendaryActions?: LegendaryActions;
+  miniStatBlock?: MiniStatBlock;
 };
 export type Library = {
   version: typeof VERSION;
@@ -189,16 +201,35 @@ export function fieldValue(card: Card, key: string) {
   return value;
 }
 
+export const creatureStatFields = [
+  f("creature", "Creature type"),
+  f("size", "Size"),
+  f("alignment", "Alignment"),
+  f("challenge", "CR / XP"),
+  f("xp", "Experience points"),
+  f("proficiency", "Proficiency bonus"),
+  ...primaryStats.map(([key, label]) =>
+    f(key, key === "initiative" ? "Initiative modifier" : label),
+  ),
+  f("hitDice", "Hit Dice"),
+  ...movementStats.map(([key, label]) => f(key, label)),
+  ...abilities.map(([key]) => f(key, key.toUpperCase())),
+  ...creatureDefences.map(([key, label]) => f(key, label)),
+];
+export const creatureStatKeys = new Set(
+  creatureStatFields.map((field) => field.key),
+);
+
 export const npcCombatFields = [
-  f("ac", "AC"),
-  f("hp", "HP"),
-  f("speed", "Speed"),
   f("traits", "Traits", true),
   f("actions", "Actions", true),
   f("bonusActions", "Bonus actions", true),
   f("reactions", "Reactions", true),
 ];
-export const npcCombatKeys = new Set(npcCombatFields.map((field) => field.key));
+export const npcCombatKeys = new Set([
+  ...creatureStatKeys,
+  ...npcCombatFields.map((field) => field.key),
+]);
 
 export const templates: Record<
   Kind,
@@ -247,6 +278,7 @@ export const templates: Record<
       f("conceals", "Conceals", true),
       f("opening", "Opening line", true),
       f("last", "Last interaction", true),
+      ...creatureStatFields,
       ...npcCombatFields,
     ],
   },
@@ -273,26 +305,7 @@ export const templates: Record<
     color: "#8c473f",
     description: "Creature statistics and encounter notes",
     fields: [
-      f("creature", "Creature type"),
-      f("size", "Size"),
-      f("alignment", "Alignment"),
-      f("challenge", "CR / XP"),
-      f("ac", "AC"),
-      f("hp", "HP"),
-      f("speed", "Speed"),
-      f("str", "STR"),
-      f("dex", "DEX"),
-      f("con", "CON"),
-      f("int", "INT"),
-      f("wis", "WIS"),
-      f("cha", "CHA"),
-      f("saves", "Saving throws"),
-      f("skills", "Skills"),
-      f("resistances", "Resistances"),
-      f("immunities", "Immunities"),
-      f("vulnerabilities", "Vulnerabilities"),
-      f("senses", "Senses"),
-      f("languages", "Languages"),
+      ...creatureStatFields,
       f("traits", "Traits", true),
       f("actions", "Actions", true),
       f("bonusActions", "Bonus actions", true),
@@ -322,13 +335,22 @@ export const fieldsFor = (card: Card) =>
 export const fieldSide = (card: Card, field: Field): Side =>
   Object.hasOwn(card.placement, field.key)
     ? card.placement[field.key]
-    : field.multiline && !field.cue
+    : ((card.type === "monster" || card.type === "npc") &&
+          (field.key === "conditionImmunities" ||
+            (card.miniStatBlock?.enabled &&
+              creatureBackKeys.has(field.key)))) ||
+        (field.multiline && !field.cue)
       ? "back"
       : "front";
 export const visibleFields = (card: Card, side: Side) =>
   fieldsFor(card).filter(
     (field) =>
       fieldSide(card, field) === side &&
+      !(
+        side === "front" &&
+        card.miniStatBlock?.enabled !== undefined &&
+        creatureFrontKeys.has(field.key)
+      ) &&
       (card.type !== "item" ||
         (!itemCustomNameFields.has(field.key) &&
           itemFieldEnabled(card, field.key))) &&
@@ -354,6 +376,9 @@ export function newCard(type: Kind): Card {
     tags: [],
     demo: false,
     frame: type === "item" ? "arcane" : "dragon",
+    ...(type === "monster"
+      ? { miniStatBlock: { enabled: true, layout: "standard" } }
+      : {}),
     theme: "parchment",
     reverse: "auto",
     placement: {},
@@ -456,13 +481,14 @@ export function parseLibrary(raw: string): Library {
     (data.version !== 1 &&
       data.version !== 2 &&
       data.version !== 3 &&
+      data.version !== 4 &&
       data.version !== VERSION) ||
     !Array.isArray(data.cards) ||
     data.cards.length > MAX_CARDS ||
     !Array.isArray(data.queue)
   )
     throw new Error(
-      "Expected a CardForge version 1, 2, 3, or 4 library (up to 500 cards).",
+      "Expected a CardForge version 1, 2, 3, 4, or 5 library (up to 500 cards).",
     );
   const legacy = data.version === 1;
   const cards: Card[] = [];
@@ -548,6 +574,13 @@ export function parseLibrary(raw: string): Library {
         !validLegendary(legendaryActions))
     )
       throw new Error("Invalid legendary actions in backup.");
+    const miniStatBlock = c.miniStatBlock;
+    if (
+      miniStatBlock !== undefined &&
+      ((c.type !== "monster" && c.type !== "npc") ||
+        !validMiniStatBlock(miniStatBlock))
+    )
+      throw new Error("Invalid mini stat block in backup.");
     const base = {
       id: c.id,
       type: c.type as Kind,
@@ -565,6 +598,7 @@ export function parseLibrary(raw: string): Library {
       ),
       demo: c.demo,
       ...(attacks === undefined ? {} : { attacks }),
+      ...(miniStatBlock === undefined ? {} : { miniStatBlock }),
       ...(legendaryActions === undefined ? {} : { legendaryActions }),
     };
     if (legacy) {

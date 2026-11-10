@@ -30,6 +30,7 @@ import {
   canvasMeasure,
   cardLayout,
   cardTextFields,
+  creatureFront,
   safeBounds,
   CARD_W,
   continuations,
@@ -42,6 +43,7 @@ import {
   textColor,
 } from "./layout";
 import { formulaKind, damageLines } from "./combat";
+import { abilityDisplay, challengeDisplay, movementDisplay } from "./creature";
 import { createCalibrationPDF, createPDF, renderCard, mm } from "./export";
 vi.mock("./art", async () => {
   const { loadImage } = await import("@napi-rs/canvas");
@@ -685,6 +687,191 @@ describe("structured combat", () => {
     attack.damage.pop();
     Object.assign(attack, { save: { ability: "LUK", dc: "10" } });
     expect(() => parseLibrary(serialize(library))).toThrow(/Invalid attacks/);
+  });
+});
+
+describe("compact creature stat blocks", () => {
+  const samples = () =>
+    parseLibrary(
+      readFileSync(
+        new URL(
+          "../output/libraries/creature-stat-blocks-v0.2.5.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+
+  it("calculates modifiers, respects legacy notation and never overrides a supplied modifier", () => {
+    expect(
+      ["1", "9", "10", "11", "18", "30"].map(
+        (value) => abilityDisplay(value).modifier,
+      ),
+    ).toEqual(["-5", "-1", "+0", "+0", "+4", "+10"]);
+    expect(abilityDisplay("18 (+7)")).toEqual({ score: "18", modifier: "+7" });
+    expect(abilityDisplay("9 (−3)")).toEqual({ score: "9", modifier: "−3" });
+    expect(abilityDisplay("18 +6")).toEqual({ score: "18", modifier: "+6" });
+    expect(abilityDisplay("18 (+7)", "+12")).toEqual({
+      score: "18",
+      modifier: "+12",
+    });
+    expect(abilityDisplay("Varies")).toEqual({ score: "Varies", modifier: "" });
+    expect(challengeDisplay("1/4 / 50 XP")).toEqual({ cr: "1/4", xp: "50 XP" });
+    expect(movementDisplay("30 ft., fly 60 ft., swim 20 ft.")).toEqual({
+      speed: "30 ft.",
+      movement: { flying: "60 ft.", swimming: "20 ft." },
+    });
+    expect(movementDisplay("1,000 ft.").speed).toBe("1,000 ft.");
+  });
+
+  it("opts in new Monsters and preserves v4 cards, IDs and legacy text stats", () => {
+    expect(newCard("monster").miniStatBlock?.enabled).toBe(true);
+    expect(newCard("npc").miniStatBlock?.enabled).toBeUndefined();
+    const raw = JSON.parse(
+      readFileSync(
+        new URL("../output/libraries/combat-v0.2.4.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const migrated = parseLibrary(JSON.stringify(raw));
+    expect(migrated).toEqual({ ...raw, version: VERSION });
+    const creature = migrated.cards[0];
+    expect(creatureFront(creature)).toBeUndefined();
+    expect(
+      cardTextFields(creature, "front").map((field) => field.label),
+    ).toContain("AC");
+    expect(
+      cardTextFields(creature, "front").map((field) => field.label),
+    ).toContain("Attacks & damage");
+  });
+
+  it("uses the existing stats without duplicate text and retains explicit side placement", () => {
+    const card = newCard("monster");
+    card.title = "Example";
+    card.fields = {
+      challenge: "1/4 / 50 XP",
+      speed: "30 ft., fly 80 ft.",
+      flying: "90 ft.",
+      ac: "17",
+      hp: "85",
+      initiative: "+2",
+      str: "18 (+6)",
+      saves: "Str +5",
+      skills: "Stealth +6",
+      conditionImmunities: "Prone",
+      senses: "Darkvision",
+      traits: "Alert.",
+    };
+    card.placement.skills = "front";
+    card.miniStatBlock!.modifiers = { str: "+7" };
+    const before = structuredClone(card.fields);
+    expect(creatureFront(card)).toMatchObject({
+      classification: "CR 1/4",
+      details: "XP 50 · Fly 90 ft.",
+      primary: [
+        { label: "AC", value: "17" },
+        { label: "HP", value: "85" },
+        { label: "SPEED", value: "30 ft." },
+        { label: "INIT", value: "+2" },
+      ],
+    });
+    const ops = cardLayout(card, 3, measure()).ops.filter(
+      (op) => op.kind === "text",
+    );
+    expect(ops.filter((op) => op.text === "AC")).toHaveLength(1);
+    expect(ops.find((op) => op.text === "+7")).toBeDefined();
+    expect(cardTextFields(card, "front").map((field) => field.label)).toContain(
+      "Skills",
+    );
+    expect(cardTextFields(card, "back").map((field) => field.label)).toEqual([
+      "Saving throws",
+      "Condition immunities",
+      "Senses",
+      "Traits",
+    ]);
+    card.miniStatBlock!.enabled = false;
+    expect(creatureFront(card)).toBeUndefined();
+    expect(
+      cardTextFields(card, "front").map((field) => field.label),
+    ).not.toContain("AC");
+    expect(cardLayout(card, 3, measure()).used).toBeLessThan(
+      cardLayout(
+        { ...card, miniStatBlock: { ...card.miniStatBlock!, enabled: true } },
+        3,
+        measure(),
+      ).used,
+    );
+    expect(card.fields).toEqual(before);
+  });
+
+  it("shortens front artwork in Combat without changing its crop settings", () => {
+    const card = samples().cards.find(
+      (entry) => entry.title === "Ironwatch Captain",
+    )!;
+    const m = measure();
+    const before = cardLayout(card, 3, m);
+    const combat = cardLayout(
+      { ...card, miniStatBlock: { ...card.miniStatBlock!, layout: "combat" } },
+      3,
+      m,
+    );
+    const image = before.ops.find((op) => op.kind === "artwork")!;
+    const smaller = combat.ops.find((op) => op.kind === "artwork")!;
+    expect(smaller.h).toBeLessThan(image.h);
+    expect(smaller.art).toEqual(image.art);
+    const damageSize = (layout: typeof before) =>
+      layout.ops.find(
+        (op) => op.kind === "text" && op.text === "1d10 + 3 Piercing",
+      );
+    expect(damageSize(combat)).toMatchObject({ size: 35 });
+    expect(damageSize(before)).toMatchObject({ size: 33 });
+  });
+
+  it("aligns six ability columns and round-trips all eight sample cards", () => {
+    const library = samples();
+    expect(library.cards).toHaveLength(8);
+    expect(parseLibrary(serialize(library))).toEqual(library);
+    const m = measure();
+    for (const card of library.cards) {
+      const front = cardLayout(card, library.safe, m);
+      expect(front.overflow, card.title).toBe(false);
+      expect(
+        cardLayout(card, library.safe, m, "back").overflow,
+        card.title,
+      ).toBe(false);
+      if (!card.miniStatBlock?.enabled) continue;
+      const labels = front.ops
+        .filter((op) => op.kind === "text")
+        .filter((op) =>
+          ["STR", "DEX", "CON", "INT", "WIS", "CHA"].includes(op.text),
+        );
+      expect(labels).toHaveLength(6);
+      expect(new Set(labels.map((op) => op.y)).size).toBe(1);
+      const centers = labels.map((op) => op.x + m(op.text, op.size, true) / 2);
+      expect(centers[5] - centers[4]).toBeCloseTo(centers[1] - centers[0]);
+    }
+    const guard = library.cards.find((card) => card.title === "Harbor Sentinel")!;
+    const frontLabels = cardTextFields(guard, "front").map((field) => field.label);
+    expect(frontLabels[0]).toBe("Attacks & damage");
+    const drake = library.cards.find((card) => card.title === "Stormglass Drake")!;
+    const drakeBack = cardLayout(drake, library.safe, m, "back");
+    expect(drakeBack.ops).toContainEqual(
+      expect.objectContaining({ kind: "text", text: "Darkvision 90 ft." }),
+    );
+  });
+
+  it("keeps overrides on backups, rejects invalid settings and warns on crowded stats", async () => {
+    const library = samples();
+    const titan = library.cards.at(-1)!;
+    expect(
+      parseLibrary(serialize(library)).cards.at(-1)?.miniStatBlock?.modifiers
+        ?.str,
+    ).toBe("+12");
+    expect(() =>
+      parseLibrary(serialize(library).replace('"str":"+12"', '"luck":"+12"')),
+    ).toThrow(/Invalid mini stat block/);
+    titan.fields.str = "W".repeat(600);
+    await expect(renderCard(titan, 3)).rejects.toThrow(/overflows/);
   });
 });
 
