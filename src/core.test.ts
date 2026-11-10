@@ -12,6 +12,8 @@ import {
   demoLibrary,
   fieldsFor,
   newCard,
+  MAX_CARDS,
+  mergeLibraries,
   parseLibrary,
   serialize,
   type Library,
@@ -22,6 +24,8 @@ import {
 import {
   canvasMeasure,
   cardLayout,
+  safeBounds,
+  CARD_W,
   continuations,
   paint,
   paginate,
@@ -63,6 +67,135 @@ const measure = () =>
       "2d",
     ) as unknown as CanvasRenderingContext2D,
   );
+const paladin = () =>
+  parseLibrary(
+    readFileSync(
+      new URL("../output/libraries/paladin-level-1-2024.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+describe("library merge", () => {
+  it("preserves current cards, settings and queue, and skips repeated stable IDs", () => {
+    const current = demoLibrary();
+    current.queue = [current.cards[0].id];
+    current.print = { flip: "short", x: 1.5, y: -0.5, guides: true };
+    current.printers = [{ name: "Home", x: 1.5, y: -0.5 }];
+    current.gap = 4;
+    current.safe = 5;
+    current.crop = false;
+    const incoming = paladin();
+    const first = mergeLibraries(current, incoming);
+    expect(first).toEqual({
+      library: { ...current, cards: [...current.cards, ...incoming.cards] },
+      added: 16,
+      skipped: 0,
+    });
+    const edited = {
+      ...first.library,
+      cards: first.library.cards.map((card) =>
+        card.id === incoming.cards[0].id
+          ? { ...card, title: "My Bless" }
+          : card,
+      ),
+    };
+    const repeat = mergeLibraries(edited, incoming);
+    expect(repeat).toEqual({ library: edited, added: 0, skipped: 16 });
+    expect(repeat.library).toBe(edited);
+  });
+
+  it("refuses a merge above the card limit without mutating the current library", () => {
+    const current = {
+      ...demoLibrary(),
+      cards: Array.from({ length: MAX_CARDS }, () => newCard("spell")),
+    };
+    const incoming = paladin();
+    expect(() => mergeLibraries(current, incoming)).toThrow(/500-card/);
+    expect(current.cards).toHaveLength(MAX_CARDS);
+    expect(mergeLibraries(current, { ...current, queue: [] }).skipped).toBe(
+      MAX_CARDS,
+    );
+  });
+});
+
+describe("adaptive typography", () => {
+  const points = (size: number) => (size * 72) / 254;
+
+  it("fits both faces of the original Paladin deck and enlarges its short backs", () => {
+    const library = paladin();
+    expect(library.cards).toHaveLength(16);
+    const m = measure();
+    for (const card of library.cards) {
+      expect(card.textSize).toBeUndefined();
+      const bounds = safeBounds(card, library.safe);
+      for (const side of ["front", "back"] as const) {
+        const layout = cardLayout(card, library.safe, m, side);
+        expect(layout.overflow, `${card.title} ${side}`).toBe(false);
+        for (const op of layout.ops) {
+          if (op.kind !== "text") continue;
+          expect(op.x).toBeGreaterThanOrEqual(bounds.pad);
+          expect(
+            op.x + m(op.text, op.size, op.bold, op.serif),
+          ).toBeLessThanOrEqual(CARD_W - bounds.pad + 0.01);
+          expect(op.y).toBeGreaterThanOrEqual(bounds.top);
+          expect(op.y + op.size).toBeLessThanOrEqual(layout.limit);
+        }
+        if (side === "back") {
+          expect(points(layout.bodySize)).toBeGreaterThanOrEqual(7.5);
+          if (
+            [
+              "Bless",
+              "Divine Favor",
+              "Shield of Faith",
+              "Cure Wounds",
+            ].includes(card.title)
+          )
+            expect(points(layout.bodySize)).toBeGreaterThanOrEqual(12);
+        }
+      }
+    }
+  });
+
+  it("reduces the size when equal-length text wraps differently", () => {
+    const card = { ...newCard("spell"), frame: "arcane" as const };
+    const narrow = { ...card, fields: { description: "iiii ".repeat(50) } };
+    const wide = { ...card, fields: { description: "MMMM ".repeat(50) } };
+    const m = measure();
+    const compact = cardLayout(narrow, 3, m, "back");
+    const wrapped = cardLayout(wide, 3, m, "back");
+    expect(compact.overflow).toBe(false);
+    expect(wrapped.overflow).toBe(false);
+    expect(compact.bodySize).toBeGreaterThan(wrapped.bodySize);
+  });
+
+  it("round-trips presets and warns rather than shrinking an overflowing manual selection", async () => {
+    const library = paladin();
+    const command = library.cards.find((card) => card.title === "Command")!;
+    const m = measure();
+    for (const [size, expected] of [
+      ["small", 9],
+      ["medium", 11],
+      ["large", 13],
+    ] as const) {
+      command.textSize = size;
+      const layout = cardLayout(command, library.safe, m, "back");
+      expect(points(layout.bodySize)).toBeCloseTo(expected);
+      expect(layout.overflow).toBe(true);
+      expect(parseLibrary(serialize(library))).toEqual(library);
+    }
+    await expect(
+      renderCard(command, library.safe, false, "back"),
+    ).rejects.toThrow(/overflows/);
+    command.textSize = "auto";
+    expect(cardLayout(command, library.safe, m, "back").overflow).toBe(false);
+    const invalid = serialize(library).replace(
+      '"textSize":"auto"',
+      '"textSize":"huge"',
+    );
+    expect(() => parseLibrary(invalid)).toThrow(/appearance/);
+  });
+});
+
 describe("versioned library", () => {
   it("round-trips all templates, tags and queue without losing unicode or text", () => {
     const lib = demoLibrary();

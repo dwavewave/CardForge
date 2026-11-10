@@ -1,6 +1,8 @@
 import {
   frames,
   themes,
+  textSizes,
+  type TextSize,
   decorative,
   visibleFields,
   type Card,
@@ -72,6 +74,19 @@ export function CardAppearance({
             <option value="auto">Automatic</option>
             <option value="info">Information</option>
             <option value="decorative">Decorative</option>
+          </select>
+        </label>
+        <label>
+          Text Size
+          <select
+            value={card.textSize ?? "auto"}
+            onChange={(e) => update({ textSize: e.target.value as TextSize })}
+          >
+            {textSizes.map((size) => (
+              <option key={size} value={size}>
+                {size[0].toUpperCase() + size.slice(1)}
+              </option>
+            ))}
           </select>
         </label>
       </div>

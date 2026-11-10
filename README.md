@@ -1,4 +1,4 @@
-# CardForge v0.2.1
+# CardForge v0.2.2
 
 CardForge is a local tabletop card studio for creating, organizing, and printing 63 × 88 mm reference cards. It runs in a browser without an account or backend.
 
@@ -22,7 +22,7 @@ Vite prints the local URL. Use the same browser profile and origin to see your s
 2. Quick-reference fields start on the front. Longer fields typically start on the reverse. Use the selector beside each field to move it. Automatic reverse mode uses the dragon-compass artwork when the back is empty. Information mode always uses a framed reverse. Decorative mode keeps any reverse content saved while hiding it in output.
 3. Add editable color tags with optional symbols. Under **Collection and artwork**, optionally assign a collection or import a JPEG, PNG, or WebP. Pick a side, then adjust crop zoom and horizontal and vertical focus while looking at the preview.
 4. Select **Save card** to keep it. **Duplicate** opens a copy for editing. Search by title, subtitle, collection or tag. Use **Frame grid** for thumbnail browsing.
-5. The renderer tries three type sizes, down to a 6.24 pt body. If it warns about overflow, check both previews, move fields or shorten text. **Create & save continuation cards** splits longer text while retaining both sides. Export either selected side as a 744 × 1039 PNG.
+5. Leave **Text Size** on **Auto** for a measured fit, or choose **Small**, **Medium**, or **Large** for a fixed size. If a side overflows, try Auto or a smaller size, move fields, or shorten text. **Create & save continuation cards** splits longer text while retaining both sides. Export either selected side as a 744 × 1039 PNG.
 
 ## Print and calibrate
 
@@ -35,9 +35,9 @@ Vite prints the local URL. Use the same browser profile and origin to see your s
 
 - On iPhone, open the HTTPS app in Safari and use **Share → Add to Home Screen**. On a supported desktop browser, use its install command. Open the app online once so the service worker can finish caching. When updating, close other CardForge tabs and standalone windows before reopening.
 - On iPhone, try **Open PDF** and the system Share sheet to print or save to Files. **Share PDF** appears when the browser reports support for file sharing. Actual iPhone installation and export are pending device verification.
-- **Export library** saves cards, image crops, queue order, and printer settings to JSON. **Import JSON** validates the file and asks before replacing the current library. v0.1 backups and browser data migrate in place. Existing fields stay on the front, with the Classic frame and single-sided printing. Keep regular backups because browser storage is tied to the origin and can be cleared or evicted.
+- **Export library** saves cards, image crops, queue order, and printer settings to JSON. **Import JSON** validates the file and offers **Merge** or **Replace library**. Merge adds new card IDs and skips existing IDs while keeping your saved cards, draft, print queue, and settings. Replace loads the backup as the active library. v0.1 backups and browser data migrate in place. Existing fields stay on the front, with the Classic frame and single-sided printing. Keep regular backups because browser storage is tied to the origin and can be cleared or evicted.
 
-See [implementation notes](docs/V02_IMPLEMENTATION.md), [acceptance evidence](docs/V02_ACCEPTANCE.md), and the [v0.1 reference audit](docs/REFERENCE_AUDIT.md).
+See the [v0.2.2 release notes](docs/V022_IMPLEMENTATION.md) and the [Paladin example library](output/libraries/paladin-level-1-2024.json). Earlier releases have [implementation notes](docs/V02_IMPLEMENTATION.md), [acceptance evidence](docs/V02_ACCEPTANCE.md), and the [v0.1 reference audit](docs/REFERENCE_AUDIT.md).
 
 
 ## Cloudflare Workers

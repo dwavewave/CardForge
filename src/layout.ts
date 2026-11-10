@@ -2,6 +2,7 @@ import {
   type Card,
   type Artwork,
   type Side,
+  type Field,
   decorative,
   fieldsFor,
   templates,
@@ -51,6 +52,7 @@ export type Layout = {
   overflow: boolean;
   used: number;
   limit: number;
+  bodySize: number;
 };
 export function wrap(
   text: string,
@@ -116,6 +118,24 @@ export function safeBounds(card: Card, safe: number) {
   };
 }
 
+// A layout unit is 0.1 mm on the printed face.
+const units = (points: number) => (points * 254) / 72;
+const presets = {
+  small: { prose: 9, metadata: 24 },
+  medium: { prose: 11, metadata: 26 },
+  large: { prose: 13, metadata: 29 },
+};
+
+function preferredProseSize(characters: number) {
+  if (characters < 150) return 13;
+  if (characters <= 300) return 12;
+  if (characters <= 500) return 11;
+  if (characters <= 750) return 10;
+  return 9;
+}
+
+type TextField = Field & { value: string };
+
 export function cardLayout(
   card: Card,
   safe: number,
@@ -128,11 +148,57 @@ export function cardLayout(
       overflow: false,
       used: 0,
       limit: CARD_H,
+      bodySize: 0,
     };
+
+  const fields: TextField[] = visibleFields(card, side).map((field) => ({
+    ...field,
+    value: card.fields[field.key],
+  }));
+  if (side === "back" && card.backNotes.trim())
+    fields.push({
+      key: "",
+      label: "DM notes",
+      multiline: true,
+      value: card.backNotes,
+    });
+
+  const prose = side === "back" || fields.some((field) => field.multiline);
+  const size = card.textSize ?? "auto";
+  if (size !== "auto") {
+    const preset = presets[size];
+    return contentLayout(
+      card,
+      safe,
+      measure,
+      side,
+      fields,
+      prose ? units(preset.prose) : preset.metadata,
+      preset.metadata,
+    );
+  }
+  const characters = fields.reduce(
+    (total, field) => total + field.value.trim().length,
+    0,
+  );
+  const preferred = prose ? preferredProseSize(characters) : 28;
+  const minimum = prose ? 7.5 : 22;
+  const step = prose ? 0.5 : 1;
   let layout: Layout;
-  // Step down deterministically to a 22-unit (6.24 pt) body before requiring continuation.
-  for (const scale of [1, 0.94, 0.88]) {
-    layout = contentLayout(card, safe, measure, side, scale);
+  for (let size = preferred; size >= minimum; size -= step) {
+    const bodySize = prose ? units(size) : size;
+    const metadata = prose
+      ? Math.max(22, Math.min(28, 22 + (size - 8) * 2))
+      : size;
+    layout = contentLayout(
+      card,
+      safe,
+      measure,
+      side,
+      fields,
+      bodySize,
+      metadata,
+    );
     if (!layout.overflow) return layout;
   }
   return layout!;
@@ -143,8 +209,11 @@ function contentLayout(
   safe: number,
   measure: Measure,
   side: Side,
-  scale: number,
+  visible: TextField[],
+  bodySize: number,
+  metadataSize: number,
 ): Layout {
+  const scale = Math.min(1, metadataSize / 25);
   const ops: Draw[] = [];
   const { pad, top, bottom } = safeBounds(card, safe);
   const width = CARD_W - pad * 2;
@@ -188,7 +257,7 @@ function contentLayout(
       : "REVERSE  /  " + templates[card.type].label.toUpperCase();
   text(header, pad, top, 16, "#52412e", true);
   let y = top + 26;
-  const titleSize = (side === "front" ? 38 : 30) * scale;
+  const titleSize = side === "front" ? 38 * scale : Math.min(45, bodySize + 4);
   for (const line of wrap(
     card.title || "Untitled card",
     width,
@@ -207,7 +276,7 @@ function contentLayout(
       y += 25 * scale;
     }
   }
-  y += 10;
+  y += side === "front" ? 10 : 6;
   const tagSize = 20 * scale;
   let x = pad,
     tagHeight = 0;
@@ -238,18 +307,15 @@ function contentLayout(
   }
   if (tagHeight) y += tagHeight + 10;
   rect(pad, y, width, 1, "#8a7155");
-  y += 11;
+  y += side === "front" ? 11 : 8;
   if (card.artwork?.side === side) {
     const h = Math.round((card.frame === "plain" ? 196 : 148) * scale);
     ops.push({ kind: "artwork", art: card.artwork, x: pad, y, w: width, h });
     y += h + 12;
   }
 
-  const visible = visibleFields(card, side);
-  if (side === "back" && card.backNotes.trim())
-    visible.push({ key: "", label: "DM notes", multiline: true });
-  const bodySize = 25 * scale,
-    labelSize = Math.max(15, 17 * scale);
+  const labelSize = Math.max(15, 17 * scale);
+  const leading = side === "back" && bodySize < units(9) ? 1.12 : 1.18;
   for (let index = 0; index < visible.length;) {
     const field = visible[index],
       next = visible[index + 1];
@@ -260,26 +326,30 @@ function contentLayout(
     let rowHeight = 0;
     for (const [column, item] of row.entries()) {
       const left = pad + column * (colWidth + 14);
+      const gutter = side === "back" && item.multiline ? 0 : 6;
       const labelLines = wrap(
         item.label.toUpperCase(),
-        colWidth - 12,
+        colWidth - gutter * 2,
         labelSize,
         measure,
         true,
       );
-      const value = item.key ? card.fields[item.key] : card.backNotes;
-      const lines = wrap(value, colWidth - 12, bodySize, measure);
+      const valueSize =
+        side === "front" && !item.multiline ? metadataSize : bodySize;
+      const lines = wrap(item.value, colWidth - gutter * 2, valueSize, measure);
       const labelStep = labelSize * 1.22,
-        bodyStep = bodySize * 1.25;
+        lineHeight = (line: string) => valueSize * (line ? leading : 0.45);
       const height =
-        labelLines.length * labelStep + lines.length * bodyStep + 9;
+        labelLines.length * labelStep +
+        lines.reduce((sum, line) => sum + lineHeight(line), 0) +
+        9;
       rowHeight = Math.max(rowHeight, height);
       if (item.cue) rect(left, y - 2, colWidth, height - 3, "#e7ede7", 3);
       let baseline = y;
       for (const label of labelLines) {
         text(
           label,
-          left + 6,
+          left + gutter,
           baseline,
           labelSize,
           item.cue ? "#365b4b" : "#60482e",
@@ -288,12 +358,12 @@ function contentLayout(
         baseline += labelStep;
       }
       for (const line of lines) {
-        text(line, left + 6, baseline, bodySize);
-        baseline += bodyStep;
+        if (line) text(line, left + gutter, baseline, valueSize);
+        baseline += lineHeight(line);
       }
     }
-    y += rowHeight;
     index += row.length;
+    y += rowHeight - (index === visible.length ? 9 : 0);
   }
   const overflow = y > limit;
   // Leave out whole lines or blocks that would cross the safe area in preview.
@@ -316,7 +386,7 @@ function contentLayout(
     );
     if (overflow) visibleOps.push(ops.at(-1)!);
   }
-  return { ops: visibleOps, overflow, used: y, limit };
+  return { ops: visibleOps, overflow, used: y, limit, bodySize };
 }
 
 export function font(size: number, bold = false, serif = false) {

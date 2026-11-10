@@ -1,0 +1,788 @@
+{
+  "version": 2,
+  "print": {
+    "flip": "long",
+    "x": 0,
+    "y": 0,
+    "guides": false
+  },
+  "printers": [],
+  "cards": [
+    {
+      "id": "paladin-2024-level-1-bless",
+      "type": "spell",
+      "title": "Bless",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Enchantment",
+        "casting": "Action",
+        "range": "30 ft.",
+        "components": "V, S, M · holy symbol (5+ GP)",
+        "duration": "Up to 1 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "Choose up to three creatures in range. While blessed, each adds 1d4 to every attack roll and saving throw.",
+        "higher": "One more creature per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-bless-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-command",
+      "type": "spell",
+      "title": "Command",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Enchantment",
+        "casting": "Action",
+        "range": "60 ft.",
+        "components": "V",
+        "duration": "Instantaneous",
+        "concentration": "",
+        "ritual": "",
+        "description": "Choose one creature you see in range. On a failed Wisdom save it obeys one command next turn:\nApproach — takes the shortest, most direct path to you. Its turn ends if it gets within 5 ft.\nDrop — lets go of everything it holds and ends its turn.\nFlee — spends its turn getting away from you as fast as it can.\nGrovel — goes Prone and ends its turn.\nHalt — neither moves nor takes an Action or Bonus Action.",
+        "higher": "One more creature per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-command-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-compelled-duel",
+      "type": "spell",
+      "title": "Compelled Duel",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Enchantment",
+        "casting": "Bonus Action",
+        "range": "30 ft.",
+        "components": "V",
+        "duration": "Up to 1 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "One creature you see in range makes a Wisdom save. On a failure, it has Disadvantage on attack rolls against other creatures and cannot willingly move to a space over 30 ft. from you.\n\nEnds if you roll an attack against another creature, cast a spell on a different enemy, finish your turn over 30 ft. from the target, or an ally damages it.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-compelled-duel-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-compelled-duel-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-cure-wounds",
+      "type": "spell",
+      "title": "Cure Wounds",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Abjuration",
+        "casting": "Action",
+        "range": "Touch",
+        "components": "V, S",
+        "duration": "Instantaneous",
+        "concentration": "",
+        "ritual": "",
+        "description": "Touch a creature to restore 2d8 HP plus your spellcasting ability modifier.",
+        "higher": "Restore another 2d8 HP per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-cure-wounds-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-detect-evil-and-good",
+      "type": "spell",
+      "title": "Detect Evil and Good",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Divination",
+        "casting": "Action",
+        "range": "Self",
+        "components": "V, S",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "Within 30 ft. of you, locate Aberrations, Celestials, Elementals, Fey, Fiends, Undead, and any active Hallow.\n\nBlocked by 1 ft. of stone, dirt, or wood, 1 in. of metal, or even a thin lead sheet.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-detect-evil-and-good-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-detect-magic",
+      "type": "spell",
+      "title": "Detect Magic",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Divination",
+        "casting": "Action or Ritual",
+        "range": "Self",
+        "components": "V, S",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "Yes",
+        "description": "Sense whether magical effects are present within 30 ft. If you detect any, take a Magic action to see faint auras on visible creatures or objects bearing the magic in that area. Learn the school of each effect that comes from a spell.\n\nBlocked by 1 ft. of stone, dirt, or wood, 1 in. of metal, or even a thin lead sheet.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-detect-magic-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-detect-poison-and-disease",
+      "type": "spell",
+      "title": "Detect Poison and Disease",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Divination",
+        "casting": "Action or Ritual",
+        "range": "Self",
+        "components": "V, S, M · yew leaf",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "Yes",
+        "description": "Within 30 ft. of you, locate and identify poisons, poisonous or venomous creatures, and magical contagions.\n\nBlocked by 1 ft. of stone, dirt, or wood, 1 in. of metal, or even a thin lead sheet.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-detect-poison-and-disease-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-divine-favor",
+      "type": "spell",
+      "title": "Divine Favor",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Transmutation",
+        "casting": "Bonus Action",
+        "range": "Self",
+        "components": "V, S",
+        "duration": "1 min.",
+        "concentration": "",
+        "ritual": "",
+        "description": "Each hit you land with a weapon deals an additional 1d4 Radiant damage while the spell lasts.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-divine-favor-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-divine-favor-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-divine-smite",
+      "type": "spell",
+      "title": "Divine Smite",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Evocation",
+        "casting": "Bonus Action after hit",
+        "range": "Self",
+        "components": "V",
+        "duration": "Instantaneous",
+        "concentration": "",
+        "ritual": "",
+        "description": "Cast immediately after landing a hit with a melee weapon or an Unarmed Strike. Add 2d8 Radiant damage to the hit, or 3d8 if the target is a Fiend or Undead.",
+        "higher": "Add another 1d8 Radiant per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-divine-smite-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-divine-smite-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-heroism",
+      "type": "spell",
+      "title": "Heroism",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Enchantment",
+        "casting": "Action",
+        "range": "Touch",
+        "components": "V, S",
+        "duration": "Up to 1 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "Touch a willing creature. For the duration it is immune to Frightened and receives Temporary HP equal to your spellcasting ability modifier at the start of each of its turns.",
+        "higher": "One more willing target per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-heroism-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-protection-from-evil-and-good",
+      "type": "spell",
+      "title": "Protection from Evil and Good",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Abjuration",
+        "casting": "Action",
+        "range": "Touch",
+        "components": "V, S, M · holy water flask (25+ GP, consumed)",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "Ward a willing creature you touch against Aberrations, Celestials, Elementals, Fey, Fiends, and Undead. They have Disadvantage when attacking it and cannot make it Charmed or Frightened, or possess it.\n\nIf one of those creatures already imposed such an effect, the warded creature has Advantage on any new save against it.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-protection-from-evil-and-good-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-purify-food-and-drink",
+      "type": "spell",
+      "title": "Purify Food and Drink",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Transmutation",
+        "casting": "Action or Ritual",
+        "range": "10 ft.",
+        "components": "V, S",
+        "duration": "Instantaneous",
+        "concentration": "",
+        "ritual": "Yes",
+        "description": "Choose a point within range. Clear poison and spoilage from all nonmagical food and drink within 5 ft. of that point.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-purify-food-and-drink-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-searing-smite",
+      "type": "spell",
+      "title": "Searing Smite",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Evocation",
+        "casting": "Bonus Action after hit",
+        "range": "Self",
+        "components": "V",
+        "duration": "1 min.",
+        "concentration": "",
+        "ritual": "",
+        "description": "Cast immediately after landing a hit with a melee weapon or an Unarmed Strike. The hit adds 1d6 Fire damage. At the start of each of the target’s turns, it takes another 1d6 Fire, then makes a Constitution save. A success ends the spell.",
+        "higher": "Increase both the initial and recurring Fire damage by 1d6 per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-searing-smite-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-searing-smite-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-shield-of-faith",
+      "type": "spell",
+      "title": "Shield of Faith",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Abjuration",
+        "casting": "Bonus Action",
+        "range": "60 ft.",
+        "components": "V, S, M · prayer scroll",
+        "duration": "Up to 10 min.",
+        "concentration": "Yes",
+        "ritual": "",
+        "description": "One creature you choose within range gets +2 AC until the spell ends.",
+        "higher": ""
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-shield-of-faith-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-shield-of-faith-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-thunderous-smite",
+      "type": "spell",
+      "title": "Thunderous Smite",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Evocation",
+        "casting": "Bonus Action after hit",
+        "range": "Self",
+        "components": "V",
+        "duration": "Instantaneous",
+        "concentration": "",
+        "ritual": "",
+        "description": "Cast immediately after landing a hit with a melee weapon or an Unarmed Strike. Add 2d6 Thunder damage. The boom carries 300 ft. from you. A creature hit must make a Strength save. On a failure, push it 10 ft. away from you and knock it Prone.",
+        "higher": "Add another 1d6 Thunder per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-thunderous-smite-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-thunderous-smite-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    },
+    {
+      "id": "paladin-2024-level-1-wrathful-smite",
+      "type": "spell",
+      "title": "Wrathful Smite",
+      "subtitle": "",
+      "fields": {
+        "level": "1",
+        "school": "Necromancy",
+        "casting": "Bonus Action after hit",
+        "range": "Self",
+        "components": "V",
+        "duration": "1 min.",
+        "concentration": "",
+        "ritual": "",
+        "description": "Cast immediately after hitting a creature with a melee weapon or an Unarmed Strike. Add 1d6 Necrotic damage. On a failed Wisdom save the creature is Frightened. It repeats the save at each turn’s end, ending the spell on itself if it succeeds.",
+        "higher": "Add another 1d6 Necrotic per slot level above 1."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "paladin-2024-level-1-wrathful-smite-class",
+          "label": "Paladin · 2024",
+          "color": "#795825",
+          "symbol": "◆"
+        },
+        {
+          "id": "paladin-2024-level-1-wrathful-smite-bonus",
+          "label": "Bonus Action",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {
+        "level": "front",
+        "school": "front",
+        "casting": "front",
+        "range": "front",
+        "components": "front",
+        "duration": "front",
+        "concentration": "front",
+        "ritual": "front",
+        "description": "back",
+        "higher": "back"
+      },
+      "backNotes": "",
+      "collection": "Paladin · Level 1 · 2024"
+    }
+  ],
+  "queue": [
+    "paladin-2024-level-1-bless",
+    "paladin-2024-level-1-command",
+    "paladin-2024-level-1-compelled-duel",
+    "paladin-2024-level-1-cure-wounds",
+    "paladin-2024-level-1-detect-evil-and-good",
+    "paladin-2024-level-1-detect-magic",
+    "paladin-2024-level-1-detect-poison-and-disease",
+    "paladin-2024-level-1-divine-favor",
+    "paladin-2024-level-1-divine-smite",
+    "paladin-2024-level-1-heroism",
+    "paladin-2024-level-1-protection-from-evil-and-good",
+    "paladin-2024-level-1-purify-food-and-drink",
+    "paladin-2024-level-1-searing-smite",
+    "paladin-2024-level-1-shield-of-faith",
+    "paladin-2024-level-1-thunderous-smite",
+    "paladin-2024-level-1-wrathful-smite"
+  ],
+  "gap": 2,
+  "safe": 3,
+  "crop": true
+}

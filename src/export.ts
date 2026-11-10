@@ -40,7 +40,7 @@ export async function renderCard(
   const layout = cardLayout(card, safe, canvasMeasure(ctx), side);
   if (layout.overflow && !allowOverflow)
     throw new Error(
-      `“${card.title || "Untitled"}” overflows on the ${side}. Move content, shorten it, or create continuations.`,
+      `“${card.title || "Untitled"}” overflows on the ${side}. Try Auto or a smaller Text Size, move content, or create continuations.`,
     );
   const frameName = side === "back" && decorative(card) ? "back" : card.frame;
   const [frame, artwork] = await Promise.all([
@@ -116,7 +116,7 @@ async function writePDF(
       ? "CardForge duplex calibration"
       : "CardForge · Print at actual size",
   );
-  pdf.setCreator("CardForge v0.2");
+  pdf.setCreator("CardForge v0.2.2");
   const preferences = pdf.catalog.getOrCreateViewerPreferences();
   preferences.setPrintScaling(PrintScaling.None);
   preferences.setDuplex(

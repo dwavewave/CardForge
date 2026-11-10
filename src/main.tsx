@@ -19,6 +19,8 @@ import {
   decorative,
   tagSymbols,
   MAX_BACKUP,
+  MAX_CARDS,
+  mergeLibraries,
   templates,
   newCard,
   demoLibrary,
@@ -171,6 +173,60 @@ function DeleteDialog({
     </dialog>
   );
 }
+function ImportDialog({
+  count,
+  canMerge,
+  onCancel,
+  onImport,
+}: {
+  count: number;
+  canMerge: boolean;
+  onCancel: () => void;
+  onImport: (mode: "merge" | "replace") => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="modal import-modal"
+      aria-labelledby="import-title"
+      onCancel={onCancel}
+    >
+      <h2 id="import-title">
+        Import {count} {count === 1 ? "card" : "cards"}
+      </h2>
+      <p>
+        Merge adds new cards and skips matching card IDs. Your cards, current
+        draft, print queue, and settings stay as they are.
+      </p>
+      {!canMerge && (
+        <p>Merge is unavailable because the saved library could not be read.</p>
+      )}
+      <p>
+        Replace library loads the backup’s cards and settings and discards your
+        current draft.
+      </p>
+      <div>
+        <button autoFocus onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="danger" onClick={() => onImport("replace")}>
+          Replace library
+        </button>
+        <button
+          className="primary"
+          disabled={!canMerge}
+          onClick={() => onImport("merge")}
+        >
+          Merge
+        </button>
+      </div>
+    </dialog>
+  );
+}
 function App() {
   const [library, setLibrary] = useState(loaded.library),
     [card, setCard] = useState<Card>(
@@ -196,6 +252,7 @@ function App() {
     [dirty, setDirty] = useState(false);
   const [canPersist, setCanPersist] = useState(!loaded.error),
     [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<Library>();
   const importRef = useRef<HTMLInputElement>(null);
   const activeCardId = useRef(card.id);
   const currentLibrary = useRef(library);
@@ -239,7 +296,7 @@ function App() {
   }
   function save() {
     if (
-      library.cards.length >= 500 &&
+      library.cards.length >= MAX_CARDS &&
       !library.cards.some((c) => c.id === card.id)
     ) {
       setNotice(
@@ -299,7 +356,7 @@ function App() {
     const cards = continuations(card, library.safe, canvasMeasure(ctx), uid);
     if (
       cards.length + library.cards.filter((c) => c.id !== card.id).length >
-      500
+      MAX_CARDS
     )
       throw new Error("Continuations exceed the 500-card library limit.");
     const next = {
@@ -333,12 +390,35 @@ function App() {
       if (image.width > 640 || image.height > 640)
         throw new Error("Artwork in the backup exceeds the 640 px limit.");
     }
-    if (
-      !window.confirm(
-        `Replace your library with ${incoming.cards.length} imported cards? Export a backup first if needed. Unsaved edits will also be replaced.`,
-      )
-    )
+    setPendingImport(incoming);
+  }
+  function applyImport(mode: "merge" | "replace") {
+    const incoming = pendingImport;
+    if (!incoming) return;
+    setPendingImport(undefined);
+    if (mode === "merge") {
+      if (!canPersist) return;
+      try {
+        const result = mergeLibraries(library, incoming);
+        if (result.added) {
+          const data = backupData(result.library);
+          try {
+            localStorage.setItem(STORAGE_KEY, data);
+          } catch {
+            throw new Error(
+              "Merge could not be saved. Browser storage is unavailable or full.",
+            );
+          }
+          setLibrary(result.library);
+        }
+        setNotice(
+          `Merged ${result.added} ${result.added === 1 ? "card" : "cards"}. Skipped ${result.skipped} existing.`,
+        );
+      } catch (error) {
+        setNotice((error as Error).message);
+      }
       return;
+    }
     setLibrary(incoming);
     setCard(incoming.cards[0] || newCard("spell"));
     setSide("front");
@@ -406,7 +486,7 @@ function App() {
           <span>
             CardForge<small>THE TABLETOP PRINT STUDIO</small>
           </span>
-          <span className="version">v0.2.1</span>
+          <span className="version">v0.2.2</span>
         </a>
         <nav aria-label="Main navigation">
           <button
@@ -548,7 +628,7 @@ function App() {
             >
               ↥ Export library
             </button>
-            <button onClick={() => importRef.current?.click()}>
+            <button disabled={busy} onClick={() => importRef.current?.click()}>
               ↧ Import JSON
             </button>
             <input
@@ -1060,7 +1140,7 @@ function App() {
                       </strong>
                       <p>
                         {overflow
-                          ? "A side exceeds its safe area. Check both previews, move fields, or create continuations. The overflowing side cannot export."
+                          ? "A side exceeds its safe area. Try Auto or a smaller Text Size, move fields, or create continuations. The overflowing side cannot export."
                           : "Preview and exports use the same card layout."}
                       </p>
                     </div>
@@ -1371,6 +1451,14 @@ function App() {
         <p>A little preparation. A lot of adventure.</p>
         <span>Local by design.</span>
       </footer>
+      {pendingImport && (
+        <ImportDialog
+          count={pendingImport.cards.length}
+          canMerge={canPersist}
+          onCancel={() => setPendingImport(undefined)}
+          onImport={applyImport}
+        />
+      )}
       {pendingDelete && (
         <DeleteDialog
           onCancel={() => setPendingDelete(null)}

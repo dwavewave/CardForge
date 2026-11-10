@@ -1456,3 +1456,10 @@ main {
     padding-inline: 12px;
   }
 }
+
+.import-modal > div {
+  flex-wrap: wrap;
+}
+.import-modal button {
+  min-height: 44px;
+}

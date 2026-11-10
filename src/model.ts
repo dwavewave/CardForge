@@ -19,6 +19,8 @@ export const themes = {
   ivory: "Ivory",
   dusk: "Dusk",
 } as const;
+export const textSizes = ["auto", "small", "medium", "large"] as const;
+export type TextSize = (typeof textSizes)[number];
 export type Side = "front" | "back";
 export type Flip = "single" | "long" | "short";
 export type PrintOptions = {
@@ -27,6 +29,7 @@ export type PrintOptions = {
   y: number;
   guides: boolean;
 };
+export const MAX_CARDS = 500;
 export const defaultPrint: PrintOptions = {
   flip: "single",
   x: 0,
@@ -53,6 +56,7 @@ export type Card = {
   demo: boolean;
   frame: keyof typeof frames;
   theme: keyof typeof themes;
+  textSize?: TextSize;
   reverse: "auto" | "decorative" | "info";
   placement: Record<string, Side>;
   backNotes: string;
@@ -319,7 +323,7 @@ export function parseLibrary(raw: string): Library {
     !record(data) ||
     (data.version !== 1 && data.version !== VERSION) ||
     !Array.isArray(data.cards) ||
-    data.cards.length > 500 ||
+    data.cards.length > MAX_CARDS ||
     !Array.isArray(data.queue)
   )
     throw new Error(
@@ -418,6 +422,8 @@ export function parseLibrary(raw: string): Library {
         !Object.hasOwn(frames, c.frame) ||
         typeof c.theme !== "string" ||
         !Object.hasOwn(themes, c.theme) ||
+        (c.textSize !== undefined &&
+          !textSizes.includes(c.textSize as TextSize)) ||
         (c.reverse !== "auto" &&
           c.reverse !== "decorative" &&
           c.reverse !== "info") ||
@@ -436,6 +442,9 @@ export function parseLibrary(raw: string): Library {
         ...base,
         frame: c.frame as Card["frame"],
         theme: c.theme as Card["theme"],
+        ...(c.textSize === undefined
+          ? {}
+          : { textSize: c.textSize as TextSize }),
         reverse: c.reverse,
         placement: c.placement as Card["placement"],
         backNotes: c.backNotes,
@@ -446,7 +455,7 @@ export function parseLibrary(raw: string): Library {
     ids.add(c.id);
   }
   if (
-    data.queue.length > 500 ||
+    data.queue.length > MAX_CARDS ||
     !data.queue.every((id) => typeof id === "string" && ids.has(id)) ||
     new Set(data.queue).size !== data.queue.length
   )
@@ -517,6 +526,20 @@ function validArtwork(value: unknown): value is Artwork {
     inRange(value.zoom, 1, 3)
   );
 }
+export function mergeLibraries(current: Library, incoming: Library) {
+  const ids = new Set(current.cards.map((card) => card.id));
+  const added = incoming.cards.filter((card) => !ids.has(card.id));
+  if (current.cards.length + added.length > MAX_CARDS)
+    throw new Error("Merge would exceed the 500-card library limit.");
+  return {
+    library: added.length
+      ? { ...current, cards: [...current.cards, ...added] }
+      : current,
+    added: added.length,
+    skipped: incoming.cards.length - added.length,
+  };
+}
+
 export const MAX_BACKUP = 15_000_000;
 export const serialize = (library: Library) => JSON.stringify(library);
 export const STORAGE_KEY = "cardforge.library.v1";
