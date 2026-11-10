@@ -31,6 +31,8 @@ export async function renderCard(
   allowOverflow = false,
   side: Side = "front",
 ) {
+  if (!allowOverflow && card.type === "item" && !card.title.trim())
+    throw new Error("Enter an item name before exporting.");
   await fontsReady();
   const canvas = document.createElement("canvas");
   canvas.width = PNG_W;
@@ -116,7 +118,7 @@ async function writePDF(
       ? "CardForge duplex calibration"
       : "CardForge · Print at actual size",
   );
-  pdf.setCreator("CardForge v0.2.2");
+  pdf.setCreator("CardForge v0.2.3");
   const preferences = pdf.catalog.getOrCreateViewerPreferences();
   preferences.setPrintScaling(PrintScaling.None);
   preferences.setDuplex(

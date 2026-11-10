@@ -5,6 +5,7 @@ import "@fontsource/inter/700.css";
 import "@fontsource/lora/700.css";
 import "@fontsource/cinzel/700.css";
 import { CardAppearance } from "./CardAppearance";
+import { ItemDetails } from "./ItemDetails";
 import { PrintSettings } from "./PrintSettings";
 import { importArtwork, frameURL, loadImage } from "./art";
 import { printPages, printSlots } from "./print";
@@ -13,6 +14,9 @@ import {
   type Kind,
   type Library,
   type Side,
+  VERSION,
+  MAX_CARD_TYPE_LABEL,
+  fieldValue,
   defaultPrint,
   fieldSide,
   visibleFields,
@@ -53,7 +57,7 @@ function initial(): { library: Library; error: string } {
   } catch {
     return {
       library: {
-        version: 2,
+        version: VERSION,
         print: { ...defaultPrint },
         printers: [],
         cards: [],
@@ -134,7 +138,7 @@ function Preview({
               ? `${card.subtitle}. Tags: ${card.tags.map((t) => t.label).join(", ")}.`
               : card.backNotes}{" "}
             {visibleFields(card, side)
-              .map((f) => `${f.label}: ${card.fields[f.key]}`)
+              .map((f) => `${f.label}: ${fieldValue(card, f.key)}`)
               .join(". ")}
           </>
         )}
@@ -295,6 +299,10 @@ function App() {
     setView("studio");
   }
   function save() {
+    if (card.type === "item" && !card.title.trim()) {
+      setNotice("Enter an item name before saving.");
+      return;
+    }
     if (
       library.cards.length >= MAX_CARDS &&
       !library.cards.some((c) => c.id === card.id)
@@ -351,6 +359,8 @@ function App() {
     }
   }
   async function split() {
+    if (card.type === "item" && !card.title.trim())
+      throw new Error("Enter an item name before saving continuations.");
     await fontsReady();
     const ctx = document.createElement("canvas").getContext("2d")!;
     const cards = continuations(card, library.safe, canvasMeasure(ctx), uid);
@@ -486,7 +496,7 @@ function App() {
           <span>
             CardForge<small>THE TABLETOP PRINT STUDIO</small>
           </span>
-          <span className="version">v0.2.2</span>
+          <span className="version">v0.2.3</span>
         </a>
         <nav aria-label="Main navigation">
           <button
@@ -622,7 +632,7 @@ function App() {
               onClick={() =>
                 download(
                   new Blob([serialize(library)], { type: "application/json" }),
-                  "cardforge-library-v2.json",
+                  `cardforge-library-v${VERSION}.json`,
                 )
               }
             >
@@ -704,6 +714,12 @@ function App() {
                               return;
                             update({
                               type: key as Kind,
+                              cardTypeLabel: undefined,
+                              ...(key === "item" &&
+                              !saved &&
+                              card.frame === "dragon"
+                                ? { frame: "arcane" as const }
+                                : {}),
                               fields: {},
                               placement: {},
                               customFields:
@@ -726,14 +742,29 @@ function App() {
                     </div>
                     <div className="form-divider" />
                     <label>
-                      Card title
+                      {card.type === "item" ? "Item name" : "Card title"}
                       <input
+                        required={card.type === "item"}
                         value={card.title}
                         maxLength={120}
                         placeholder="Give your card a name"
                         onChange={(e) => update({ title: e.target.value })}
                       />
                     </label>
+                    {card.type === "custom" && (
+                      <label>
+                        Card Type Label{" "}
+                        <span className="optional">optional</span>
+                        <input
+                          value={card.cardTypeLabel ?? ""}
+                          maxLength={MAX_CARD_TYPE_LABEL}
+                          placeholder="Location, Quest, Encounter…"
+                          onChange={(e) =>
+                            update({ cardTypeLabel: e.target.value })
+                          }
+                        />
+                      </label>
+                    )}
                     <label>
                       Subtitle <span className="optional">optional</span>
                       <input
@@ -743,6 +774,9 @@ function App() {
                         onChange={(e) => update({ subtitle: e.target.value })}
                       />
                     </label>
+                    {card.type === "item" && (
+                      <ItemDetails card={card} update={update} />
+                    )}
                     <CardAppearance
                       card={card}
                       busy={busy}
@@ -872,17 +906,21 @@ function App() {
                       ＋ Add tag
                     </button>
                     <div className="form-divider" />
-                    <div className="subheading">
-                      <h3>{templates[card.type].label} details</h3>
-                      <span className="optional">
-                        {card.type === "npc"
-                          ? "Performance cues print first"
-                          : ""}
-                      </span>
-                    </div>
-                    {(card.type === "monster"
-                      ? ["Statistics", "Actions, traits and tactics"]
-                      : [""]
+                    {card.type !== "item" && (
+                      <div className="subheading">
+                        <h3>{templates[card.type].label} details</h3>
+                        <span className="optional">
+                          {card.type === "npc"
+                            ? "Performance cues print first"
+                            : ""}
+                        </span>
+                      </div>
+                    )}
+                    {(card.type === "item"
+                      ? []
+                      : card.type === "monster"
+                        ? ["Statistics", "Actions, traits and tactics"]
+                        : [""]
                     ).map((group) => {
                       const fieldList = fieldsFor(card).filter(
                         (f) =>

@@ -1,5 +1,5 @@
-export const VERSION = 2;
-export type Kind = "spell" | "npc" | "plot" | "custom" | "monster";
+export const VERSION = 3;
+export type Kind = "spell" | "npc" | "plot" | "custom" | "monster" | "item";
 export type Field = {
   key: string;
   label: string;
@@ -49,6 +49,7 @@ export type Card = {
   id: string;
   type: Kind;
   title: string;
+  cardTypeLabel?: string;
   subtitle: string;
   fields: Record<string, string>;
   customFields: Field[];
@@ -64,7 +65,7 @@ export type Card = {
   collection: string;
 };
 export type Library = {
-  version: 2;
+  version: typeof VERSION;
   print: PrintOptions;
   printers: { name: string; x: number; y: number }[];
   cards: Card[];
@@ -80,6 +81,104 @@ const f = (
   cue = false,
   toggle = false,
 ): Field => ({ key, label, multiline, cue, toggle });
+export const MAX_CARD_TYPE_LABEL = 30;
+export const itemChoices: Readonly<Record<string, readonly string[]>> = {
+  category: [
+    "Weapon",
+    "Armour",
+    "Shield",
+    "Wondrous Item",
+    "Potion",
+    "Scroll",
+    "Ring",
+    "Rod",
+    "Staff",
+    "Wand",
+    "Ammunition",
+    "Adventuring Gear",
+    "Other",
+    "Custom",
+  ],
+  rarity: [
+    "Common",
+    "Uncommon",
+    "Rare",
+    "Very Rare",
+    "Legendary",
+    "Artifact",
+    "Custom",
+  ],
+  attunement: ["Not required", "Required", "Restricted", "Custom"],
+  magic: ["Magical", "Nonmagical"],
+};
+
+const customItemNames: Readonly<Record<string, string>> = {
+  category: "categoryName",
+  rarity: "rarityName",
+};
+export const itemCustomNameFields = new Set(Object.values(customItemNames));
+
+export const itemFieldGroups = {
+  "Item identification": [
+    f("category", "Item category"),
+    f("categoryName", "Custom category name"),
+    f("rarity", "Rarity"),
+    f("rarityName", "Custom rarity"),
+    f("attunement", "Attunement"),
+    f("attunementRestriction", "Attunement restriction"),
+    f("magic", "Magic"),
+    f("value", "Value"),
+    f("weight", "Weight"),
+  ],
+  "Equipment details": [
+    f("damageDice", "Damage dice"),
+    f("damageType", "Damage type"),
+    f("weaponProperties", "Weapon properties"),
+    f("armourClass", "Armour Class"),
+    f("armourCategory", "Armour category"),
+    f("charges", "Charges"),
+    f("uses", "Uses / Recharge"),
+  ],
+  "Back details": [
+    f("description", "Description", true),
+    f("properties", "Properties", true),
+    f("effects", "Magical effects", true),
+    f("activation", "Activation requirements", true),
+    f("recharge", "Charges and recharge conditions", true),
+    f("limitations", "Limitations", true),
+    f("curse", "Curse", true),
+    f("lore", "Lore / flavour text", true),
+  ],
+};
+
+const weaponDetails = new Set(["damageDice", "damageType", "weaponProperties"]);
+const armourDetails = new Set(["armourClass", "armourCategory"]);
+
+export function itemFieldEnabled(card: Card, key: string) {
+  const { category, rarity, attunement } = card.fields;
+  if (key === "categoryName") return category === "Custom";
+  if (key === "rarityName") return rarity === "Custom";
+  if (key === "attunementRestriction")
+    return attunement === "Restricted" || attunement === "Custom";
+  if (!category || category === "Other" || category === "Custom") return true;
+  if (weaponDetails.has(key))
+    return ["Weapon", "Ammunition", "Staff"].includes(category);
+  if (armourDetails.has(key))
+    return category === "Armour" || category === "Shield";
+  return true;
+}
+
+export function fieldValue(card: Card, key: string) {
+  const value = Object.hasOwn(card.fields, key) ? card.fields[key] : "";
+  if (
+    card.type === "item" &&
+    value === "Custom" &&
+    Object.hasOwn(customItemNames, key)
+  )
+    return card.fields[customItemNames[key]] ?? "";
+  return value;
+}
+
 export const templates: Record<
   Kind,
   {
@@ -181,6 +280,13 @@ export const templates: Record<
       f("tactics", "Tactics", true),
     ],
   },
+  item: {
+    label: "Item",
+    icon: "◆",
+    color: "#8a692d",
+    description: "Equipment, magic items and homebrew",
+    fields: Object.values(itemFieldGroups).flat(),
+  },
   custom: {
     label: "Custom",
     icon: "▤",
@@ -201,7 +307,10 @@ export const visibleFields = (card: Card, side: Side) =>
   fieldsFor(card).filter(
     (field) =>
       fieldSide(card, field) === side &&
-      !!card.fields[field.key]?.trim() &&
+      (card.type !== "item" ||
+        (!itemCustomNameFields.has(field.key) &&
+          itemFieldEnabled(card, field.key))) &&
+      !!fieldValue(card, field.key).trim() &&
       (!field.toggle || card.fields[field.key] === "Yes"),
   );
 export const decorative = (card: Card) =>
@@ -221,7 +330,7 @@ export function newCard(type: Kind): Card {
     customFields: type === "custom" ? [f("notes", "Notes", true)] : [],
     tags: [],
     demo: false,
-    frame: "dragon",
+    frame: type === "item" ? "arcane" : "dragon",
     theme: "parchment",
     reverse: "auto",
     placement: {},
@@ -321,13 +430,13 @@ export function parseLibrary(raw: string): Library {
   const data: unknown = JSON.parse(raw);
   if (
     !record(data) ||
-    (data.version !== 1 && data.version !== VERSION) ||
+    (data.version !== 1 && data.version !== 2 && data.version !== VERSION) ||
     !Array.isArray(data.cards) ||
     data.cards.length > MAX_CARDS ||
     !Array.isArray(data.queue)
   )
     throw new Error(
-      "Expected a CardForge version 1 or 2 library (up to 500 cards).",
+      "Expected a CardForge version 1, 2, or 3 library (up to 500 cards).",
     );
   const legacy = data.version === 1;
   const cards: Card[] = [];
@@ -341,7 +450,12 @@ export function parseLibrary(raw: string): Library {
       typeof c.type !== "string" ||
       !Object.hasOwn(templates, c.type) ||
       (legacy && c.type === "monster") ||
+      (data.version !== VERSION && c.type === "item") ||
       !str(c.title, 120) ||
+      (c.type === "item" && !c.title.trim()) ||
+      (c.type === "custom" &&
+        c.cardTypeLabel !== undefined &&
+        !str(c.cardTypeLabel, MAX_CARD_TYPE_LABEL)) ||
       !str(c.subtitle, 180) ||
       typeof c.demo !== "boolean" ||
       !record(c.fields) ||
@@ -358,6 +472,14 @@ export function parseLibrary(raw: string): Library {
       c.tags.length > 20
     )
       throw new Error("Invalid card data in backup.");
+    if (
+      c.type === "item" &&
+      Object.entries(itemChoices).some(([key, options]) => {
+        const value = (c.fields as Record<string, string>)[key];
+        return value !== undefined && value !== "" && !options.includes(value);
+      })
+    )
+      throw new Error("Invalid item identification in backup.");
     const keys = new Set<string>();
     for (const field of c.customFields) {
       if (
@@ -394,6 +516,9 @@ export function parseLibrary(raw: string): Library {
       id: c.id,
       type: c.type as Kind,
       title: c.title,
+      ...(c.type === "custom" && typeof c.cardTypeLabel === "string"
+        ? { cardTypeLabel: c.cardTypeLabel }
+        : {}),
       subtitle: c.subtitle,
       fields: c.fields as Card["fields"],
       customFields: c.customFields as Field[],

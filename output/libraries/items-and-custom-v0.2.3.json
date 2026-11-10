@@ -1,0 +1,218 @@
+{
+  "version": 3,
+  "print": {
+    "flip": "long",
+    "x": 0,
+    "y": 0,
+    "guides": false
+  },
+  "printers": [],
+  "cards": [
+    {
+      "id": "v023-longsword",
+      "type": "item",
+      "title": "Longsword",
+      "subtitle": "",
+      "fields": {
+        "category": "Weapon",
+        "magic": "Nonmagical",
+        "attunement": "Not required",
+        "value": "15 GP",
+        "weight": "3 lb.",
+        "damageDice": "1d8",
+        "damageType": "Slashing",
+        "weaponProperties": "Versatile (1d10), Sap",
+        "description": "A martial melee weapon. Its damage die becomes 1d10 when you make a melee attack with both hands.",
+        "properties": "Sap mastery: when you hit a creature, its next attack roll before your next turn has Disadvantage."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples"
+    },
+    {
+      "id": "v023-plate-plus-one",
+      "type": "item",
+      "title": "Plate Armour +1",
+      "subtitle": "",
+      "fields": {
+        "category": "Armour",
+        "rarity": "Rare",
+        "attunement": "Not required",
+        "magic": "Magical",
+        "value": "5,500 GP",
+        "weight": "65 lb.",
+        "armourClass": "19",
+        "armourCategory": "Heavy",
+        "description": "A full suit of plate with a magical +1 AC bonus. The front shows the total.",
+        "limitations": "Stealth checks have Disadvantage. A wearer with Strength below 15 loses 10 ft. of Speed."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples"
+    },
+    {
+      "id": "v023-potion-of-healing",
+      "type": "item",
+      "title": "Potion of Healing",
+      "subtitle": "",
+      "fields": {
+        "category": "Potion",
+        "rarity": "Common",
+        "magic": "Magical",
+        "uses": "Single use",
+        "effects": "The drinker regains 2d4 + 2 HP immediately.",
+        "activation": "Use a Bonus Action to drink it or give it to another creature. The dose is used up."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "v023-potion-of-healing-1",
+          "label": "Consumable",
+          "color": "#405579"
+        }
+      ],
+      "demo": false,
+      "frame": "sword",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples"
+    },
+    {
+      "id": "v023-ring-of-protection",
+      "type": "item",
+      "title": "Ring of Protection",
+      "subtitle": "",
+      "fields": {
+        "category": "Ring",
+        "rarity": "Rare",
+        "attunement": "Required",
+        "magic": "Magical",
+        "effects": "While you wear this ring, add 1 to your AC and to each saving throw."
+      },
+      "customFields": [],
+      "tags": [],
+      "demo": false,
+      "frame": "wings",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples"
+    },
+    {
+      "id": "v023-light-bringer",
+      "type": "item",
+      "title": "Light Bringer",
+      "subtitle": "",
+      "fields": {
+        "category": "Custom",
+        "categoryName": "Runeforged weapon",
+        "rarity": "Custom",
+        "rarityName": "Dawnforged",
+        "attunement": "Restricted",
+        "attunementRestriction": "Paladin",
+        "magic": "Magical",
+        "weight": "5 lb.",
+        "damageDice": "1d8",
+        "damageType": "Bludgeoning",
+        "weaponProperties": "Versatile (1d10), Push",
+        "charges": "3",
+        "description": "Homebrew warhammer with a sunburst worked into its head.",
+        "effects": "Spend 1 charge after a hit to add 1d6 Radiant damage.",
+        "recharge": "Regains 1d3 spent charges at dawn.",
+        "lore": "It once hung above a lighthouse door.\n\nThe head still warms when fog rolls in."
+      },
+      "customFields": [],
+      "tags": [
+        {
+          "id": "v023-light-bringer-1",
+          "label": "Homebrew",
+          "color": "#795825"
+        }
+      ],
+      "demo": false,
+      "frame": "dragon",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples"
+    },
+    {
+      "id": "v023-location",
+      "type": "custom",
+      "title": "The Glass Archive",
+      "subtitle": "",
+      "fields": {
+        "notes": "A lantern in the west window signals that the archive is open."
+      },
+      "customFields": [
+        {
+          "key": "notes",
+          "label": "Notes",
+          "multiline": true
+        }
+      ],
+      "tags": [],
+      "demo": false,
+      "frame": "dragon",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples",
+      "cardTypeLabel": "Location"
+    },
+    {
+      "id": "v023-unlabelled",
+      "type": "custom",
+      "title": "The Second Key",
+      "subtitle": "",
+      "fields": {
+        "notes": "The iron key opens the cabinet under the stairs, even if the cabinet has been moved."
+      },
+      "customFields": [
+        {
+          "key": "notes",
+          "label": "Notes",
+          "multiline": true
+        }
+      ],
+      "tags": [],
+      "demo": false,
+      "frame": "arcane",
+      "theme": "parchment",
+      "reverse": "info",
+      "placement": {},
+      "backNotes": "",
+      "collection": "Item Studio Samples",
+      "cardTypeLabel": ""
+    }
+  ],
+  "queue": [
+    "v023-longsword",
+    "v023-plate-plus-one",
+    "v023-potion-of-healing",
+    "v023-ring-of-protection",
+    "v023-light-bringer",
+    "v023-location",
+    "v023-unlabelled"
+  ],
+  "gap": 2,
+  "safe": 3,
+  "crop": true
+}

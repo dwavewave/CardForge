@@ -12,6 +12,11 @@ import {
   demoLibrary,
   fieldsFor,
   newCard,
+  VERSION,
+  fieldValue,
+  itemFieldEnabled,
+  visibleFields,
+  frames,
   MAX_CARDS,
   mergeLibraries,
   parseLibrary,
@@ -268,7 +273,7 @@ it("migrates all v1 fields to the front and preserves IDs, values, custom fields
   };
   const migrated = parseLibrary(JSON.stringify(legacy));
   expect(migrated).toMatchObject({
-    version: 2,
+    version: VERSION,
     gap: 3,
     safe: 5,
     crop: false,
@@ -312,6 +317,181 @@ it("round-trips portable artwork and monster fields and rejects invalid placemen
   delete monster.placement.misspelled;
   monster.artwork.src = "https://example.invalid/remote.png";
   expect(() => parseLibrary(serialize(library))).toThrow(/appearance/);
+});
+
+describe("Custom labels and Item cards", () => {
+  const sampleLibrary = () =>
+    parseLibrary(
+      readFileSync(
+        new URL(
+          "../output/libraries/items-and-custom-v0.2.3.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+
+  it("migrates a v2 backup with IDs, settings, labels and fields intact", () => {
+    const library = demoLibrary();
+    const labelled = {
+      ...newCard("custom"),
+      title: "Map",
+      cardTypeLabel: "Location",
+      fields: { notes: "Two rivers." },
+    };
+    const unlabelled = {
+      ...newCard("custom"),
+      title: "Key",
+      fields: { notes: "Opens the observatory." },
+    };
+    library.cards.push(labelled, unlabelled);
+    library.queue = [labelled.id];
+    library.gap = 4;
+    const backup = { ...library, version: 2 };
+    expect(parseLibrary(JSON.stringify(backup))).toEqual(library);
+    expect(paladin().version).toBe(VERSION);
+  });
+
+  it("renders the Custom label in its category position or omits it on both faces", () => {
+    const card = {
+      ...newCard("custom"),
+      title: "Glass Archive",
+      reverse: "info" as const,
+      cardTypeLabel: "Legendary Artefact",
+    };
+    const m = measure();
+    const draw = (side: "front" | "back") =>
+      cardLayout(card, 3, m, side).ops.filter((op) => op.kind === "text");
+    for (const side of ["front", "back"] as const) {
+      expect(draw(side)[0]).toMatchObject({
+        text: "LEGENDARY ARTEFACT",
+        size: 16,
+      });
+      expect(draw(side).map((op) => op.text)).not.toContain("CUSTOM");
+    }
+    card.cardTypeLabel = "   ";
+    for (const side of ["front", "back"] as const) {
+      expect(draw(side)[0]).toMatchObject({
+        text: "Glass Archive",
+        y: safeBounds(card, 3).top,
+      });
+    }
+  });
+
+  it("round-trips the example deck and fits both sides of all seven cards", () => {
+    const library = sampleLibrary();
+    expect(parseLibrary(serialize(library))).toEqual(library);
+    expect(library.cards.filter((card) => card.type === "item")).toHaveLength(
+      5,
+    );
+    expect(library.queue).toHaveLength(7);
+    const m = measure();
+    for (const card of library.cards)
+      for (const side of ["front", "back"] as const) {
+        expect(
+          cardLayout(card, library.safe, m, side).overflow,
+          `${card.title} ${side}`,
+        ).toBe(false);
+      }
+    expect(mergeLibraries(demoLibrary(), library).added).toBe(7);
+  });
+
+  it("preserves hidden equipment and restriction values when the item category changes", () => {
+    const card = newCard("item");
+    expect(card).toMatchObject({ frame: "arcane", theme: "parchment" });
+    card.title = "Shifting relic";
+    card.fields = {
+      category: "Weapon",
+      damageDice: "1d8",
+      armourClass: "18",
+      rarity: "Custom",
+      rarityName: "Relic grade",
+      attunement: "Restricted",
+      attunementRestriction: "Paladin",
+    };
+    const frontKeys = () =>
+      visibleFields(card, "front").map((field) => field.key);
+    expect(frontKeys()).toContain("damageDice");
+    expect(frontKeys()).not.toContain("armourClass");
+    expect(frontKeys()).toContain("attunementRestriction");
+    expect(fieldValue(card, "rarity")).toBe("Relic grade");
+    expect(frontKeys()).not.toContain("rarityName");
+    card.fields.category = "Armour";
+    card.fields.attunement = "Not required";
+    expect(frontKeys()).toContain("armourClass");
+    expect(frontKeys()).not.toContain("damageDice");
+    expect(frontKeys()).not.toContain("attunementRestriction");
+    expect(itemFieldEnabled(card, "damageDice")).toBe(false);
+    card.fields.category = "Weapon";
+    expect(fieldValue(card, "damageDice")).toBe("1d8");
+    expect(frontKeys()).toContain("damageDice");
+    expect(card.fields.attunementRestriction).toBe("Paladin");
+    card.fields.category = "Custom";
+    expect(frontKeys()).not.toContain("category");
+    card.fields.categoryName = "Relic";
+    expect(fieldValue(card, "category")).toBe("Relic");
+    expect(frontKeys()).toContain("category");
+    expect(frontKeys()).not.toContain("categoryName");
+  });
+
+  it("fits an Item on every existing frame and warns on overflowing prose", async () => {
+    const card = newCard("item");
+    card.title = "Gem";
+    card.fields = {
+      category: "Wondrous Item",
+      description: "The gem glows in darkness.",
+    };
+    for (const frame of Object.keys(frames) as (keyof typeof frames)[]) {
+      card.frame = frame;
+      expect(cardLayout(card, 3, measure()).overflow).toBe(false);
+      expect(cardLayout(card, 3, measure(), "back").overflow).toBe(false);
+    }
+    card.fields.description = "A thick tome. ".repeat(240);
+    await expect(renderCard(card, 3, false, "back")).rejects.toThrow(
+      /overflows/,
+    );
+  });
+
+  it("keeps item selectors valid on continuations and preserves unprinted fields", () => {
+    const card = newCard("item");
+    card.title = "Changing Ward";
+    card.fields = {
+      category: "Custom",
+      categoryName: "Runeforged",
+      rarity: "Rare",
+      attunement: "Not required",
+      attunementRestriction: "Kept for later",
+      description: "The sigil changes with the hour. ".repeat(100),
+    };
+    const pages = continuations(card, 3, measure(), () => crypto.randomUUID());
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.map((page) => page.fields.description ?? "").join("")).toBe(
+      card.fields.description,
+    );
+    expect(pages[0].fields.attunementRestriction).toBe("Kept for later");
+    expect(
+      pages.every((page) => fieldValue(page, "category") === "Runeforged"),
+    ).toBe(true);
+    const library = { ...demoLibrary(), cards: pages };
+    expect(parseLibrary(serialize(library))).toEqual(library);
+  });
+
+  it("rejects invalid Item names, choice values and Custom labels", async () => {
+    const library = sampleLibrary();
+    const [item] = library.cards;
+    const custom = library.cards.find((card) => card.type === "custom")!;
+    custom.cardTypeLabel = "x".repeat(31);
+    expect(() => parseLibrary(serialize(library))).toThrow(/Invalid card/);
+    custom.cardTypeLabel = "";
+    item.fields.rarity = "Mythic";
+    expect(() => parseLibrary(serialize(library))).toThrow(
+      /Invalid item identification/,
+    );
+    item.fields.rarity = "Custom";
+    item.title = "  ";
+    expect(() => parseLibrary(serialize(library))).toThrow(/Invalid card/);
+    await expect(renderCard(item, 3)).rejects.toThrow(/item name/);
+  });
 });
 
 describe("physical geometry and pagination", () => {

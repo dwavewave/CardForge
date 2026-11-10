@@ -5,6 +5,10 @@ import {
   type Field,
   decorative,
   fieldsFor,
+  fieldValue,
+  itemChoices,
+  itemFieldEnabled,
+  itemCustomNameFields,
   templates,
   visibleFields,
 } from "./model";
@@ -153,7 +157,7 @@ export function cardLayout(
 
   const fields: TextField[] = visibleFields(card, side).map((field) => ({
     ...field,
-    value: card.fields[field.key],
+    value: fieldValue(card, field.key),
   }));
   if (side === "back" && card.backNotes.trim())
     fields.push({
@@ -252,11 +256,18 @@ function contentLayout(
       );
   }
   const header =
-    side === "front"
-      ? templates[card.type].label.toUpperCase()
-      : "REVERSE  /  " + templates[card.type].label.toUpperCase();
-  text(header, pad, top, 16, "#52412e", true);
-  let y = top + 26;
+    card.type === "custom"
+      ? (card.cardTypeLabel ?? "").trim().toUpperCase()
+      : (side === "back" ? "REVERSE  /  " : "") +
+        templates[card.type].label.toUpperCase();
+  let y = top;
+  if (header) {
+    for (const line of wrap(header, width, 16, measure, true)) {
+      text(line, pad, y, 16, "#52412e", true);
+      y += 20;
+    }
+    y += 6;
+  }
   const titleSize = side === "front" ? 38 * scale : Math.min(45, bodySize + 4);
   for (const line of wrap(
     card.title || "Untitled card",
@@ -487,7 +498,22 @@ export function continuations(
     !cardLayout(c, safe, measure, "back").overflow;
   if (fits(card)) return [card];
   const result: Card[] = [];
-  const keys = new Set(fieldsFor(card).map((field) => field.key));
+  // Keep item selectors intact so continuation cards retain category context.
+  const fixed =
+    card.type === "item"
+      ? Object.fromEntries(
+          Object.entries(card.fields).filter(
+            ([key]) =>
+              Object.hasOwn(itemChoices, key) || itemCustomNameFields.has(key),
+          ),
+        )
+      : {};
+  const splittable = fieldsFor(card).filter(
+    (field) =>
+      card.type !== "item" ||
+      (!Object.hasOwn(fixed, field.key) && itemFieldEnabled(card, field.key)),
+  );
+  const keys = new Set(splittable.map((field) => field.key));
   const unrendered = Object.fromEntries(
     Object.entries(card.fields).filter(([key]) => !keys.has(key)),
   );
@@ -500,7 +526,7 @@ export function continuations(
       ...card,
       id: makeId(),
       title: `${card.title.slice(0, 95) || "Untitled"} · ${result.length + 1}`,
-      fields: {},
+      fields: { ...fixed },
       backNotes: "",
       artwork: undefined,
     };
@@ -509,7 +535,7 @@ export function continuations(
     throw new Error(
       "The heading or tags fill the card. Shorten them before creating continuations.",
     );
-  const chunks = fieldsFor(card).map((field) => ({
+  const chunks = splittable.map((field) => ({
     value: card.fields[field.key] ?? "",
     put: (c: Card, value: string) => ({
       ...c,
