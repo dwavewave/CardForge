@@ -1,4 +1,4 @@
-# CardForge v0.2
+# CardForge v0.2.1
 
 CardForge is a local tabletop card studio for creating, organizing, and printing 63 × 88 mm reference cards. It runs in a browser without an account or backend.
 
@@ -38,3 +38,10 @@ Vite prints the local URL. Use the same browser profile and origin to see your s
 - **Export library** saves cards, image crops, queue order, and printer settings to JSON. **Import JSON** validates the file and asks before replacing the current library. v0.1 backups and browser data migrate in place. Existing fields stay on the front, with the Classic frame and single-sided printing. Keep regular backups because browser storage is tied to the origin and can be cleared or evicted.
 
 See [implementation notes](docs/V02_IMPLEMENTATION.md), [acceptance evidence](docs/V02_ACCEPTANCE.md), and the [v0.1 reference audit](docs/REFERENCE_AUDIT.md).
+
+
+## Cloudflare Workers
+
+Build with `npm run build` and deploy using the checked-in `wrangler.jsonc` and Wrangler 4. Deploy to the **existing Worker name and hostname** so browsers keep access to their saved libraries. If that name differs from `cardforge`, pass the existing name with `npx wrangler@4 deploy --name <existing-worker-name>`.
+
+After updating, open the app online, then close every CardForge tab and Home Screen instance and reopen. If the root still shows Safari’s redirect error, open `/recover` on the same hostname to let the browser fetch the update. See the [service worker release notes](docs/V021_SERVICE_WORKER.md) for the recovery sequence and verification status.

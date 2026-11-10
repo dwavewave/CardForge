@@ -406,7 +406,7 @@ function App() {
           <span>
             CardForge<small>THE TABLETOP PRINT STUDIO</small>
           </span>
-          <span className="version">v0.2</span>
+          <span className="version">v0.2.1</span>
         </a>
         <nav aria-label="Main navigation">
           <button
@@ -1403,7 +1403,10 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
     "load",
     () => {
       void navigator.serviceWorker
-        .register(`${import.meta.env.BASE_URL}sw.js`)
+        .register(`${import.meta.env.BASE_URL}sw.js`, {
+          scope: import.meta.env.BASE_URL,
+          updateViaCache: "none",
+        })
         .catch((error) =>
           console.warn("CardForge offline setup failed.", error),
         );

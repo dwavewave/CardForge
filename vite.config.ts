@@ -19,7 +19,7 @@ export default defineConfig({
             (file) =>
               file.isFile() &&
               !file.name.startsWith(".") &&
-              file.name !== "sw.js",
+              !["sw.js", "_headers"].includes(file.name),
           )
           .map((file) =>
             resolve(file.parentPath, file.name).slice(root.length + 1),
